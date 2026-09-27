@@ -25,6 +25,8 @@ from cot_pipeline.transform import (
     add_net_positions,
     clean_report,
     extend_with_net_positions,
+    history_to_backfill,
+    may_lack_history,
     merge_symbol_data,
     rewrite_reason,
     rows_for_symbol,
@@ -59,6 +61,16 @@ def create_symbol_file(symbol, path, incoming, get_history, rebuild):
     return SymbolUpdate(merged, merged, CREATED, len(merged))
 
 
+def missing_history(symbol, existing, get_history):
+    """1986-2016 history for symbol that the saved file doesn't have yet (empty if none or not needed)."""
+    if not may_lack_history(existing):
+        return existing.iloc[0:0]
+    history_rows = get_history()
+    if history_rows is None:
+        return existing.iloc[0:0]
+    return history_to_backfill(existing, rows_for_symbol(history_rows, symbol))
+
+
 def update_symbol(symbol, new_rows, data_dir, get_history, rebuild=False):
     """Bring data/<symbol>.csv up to date, appending only records it doesn't have yet.
 
@@ -79,20 +91,25 @@ def update_symbol(symbol, new_rows, data_dir, get_history, rebuild=False):
             revised,
         )
 
+    backfill = missing_history(symbol, existing, get_history)
     reason = rewrite_reason(saved.columns, existing, fresh)
+    if len(backfill):
+        history_note = f"adding {len(backfill)} older records from {config.HISTORICAL_FILENAME}"
+        reason = f"{history_note}; {reason}" if reason else history_note
     if reason:
-        merged, duplicates = merge_symbol_data([existing, fresh])
+        merged, duplicates = merge_symbol_data([backfill, existing, fresh])
         write_csv(merged, path)
+        added = len(merged) - len(existing)
         logger.info(
-            "%s: rewrote %s in full (%s): %d records, %d new, %d duplicates dropped",
+            "%s: rewrote %s in full (%s): %d records, %d added, %d duplicates dropped",
             symbol,
             path,
             reason,
             len(merged),
-            len(fresh),
+            added,
             duplicates,
         )
-        return SymbolUpdate(merged, merged, REWRITTEN, len(fresh))
+        return SymbolUpdate(merged, merged, REWRITTEN, added)
 
     data = add_net_positions(existing)[config.DATA_COLUMNS]
     if fresh.empty:

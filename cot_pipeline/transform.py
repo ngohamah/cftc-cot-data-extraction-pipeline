@@ -98,6 +98,17 @@ def extend_with_net_positions(existing, new_rows):
     return extended.iloc[1:][config.DATA_COLUMNS].reset_index(drop=True)
 
 
+def may_lack_history(existing):
+    """True if the saved file starts at/after the first API year, i.e. 1986-2016 history may be missing."""
+    return existing.empty or existing[config.DATE_COL].min() >= f"{config.FIRST_API_YEAR}-01-01"
+
+
+def history_to_backfill(existing, history_rows):
+    """History rows older than the earliest saved week (they belong before the saved data)."""
+    earliest = existing[config.DATE_COL].min() if len(existing) else "9999-12-31"
+    return history_rows[history_rows[config.DATE_COL] < earliest]
+
+
 def rewrite_reason(saved_columns, existing, new_rows):
     """Why a saved file can't simply be appended to, or None if appending is safe."""
     if list(saved_columns) != config.DATA_COLUMNS:

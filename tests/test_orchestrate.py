@@ -94,3 +94,26 @@ def test_run_offline_end_to_end(tmp_path):
     assert signals["Interpretation"].tolist() == ["No signal", "Bullish"]
     assert "MEXICAN PESO" in (tmp_path / "reports" / "latest_signals.md").read_text()
     assert code == 1  # other symbols had no data, reported as problems
+
+
+def test_update_symbol_backfills_history_into_file_that_starts_in_2017(tmp_path):
+    recent = [(PESO, "2017-01-03", 10, 5, 0), (PESO, "2017-01-10", 20, 5, 0)]
+    history = cleaned([(PESO, "2016-12-20", 1, 1, 0), (PESO, "2016-12-27", 2, 1, 0)])
+    update_symbol("MEXICAN PESO", cleaned(recent), tmp_path, lambda: None)  # created without history
+
+    update = update_symbol("MEXICAN PESO", cleaned(recent), tmp_path, lambda: history)
+
+    assert update.mode == REWRITTEN and update.new_count == 2
+    saved = pd.read_csv(tmp_path / "MEXICAN PESO.csv")
+    assert saved[config.DATE_COL].tolist() == ["2016-12-20", "2016-12-27", "2017-01-03", "2017-01-10"]
+    assert saved[config.NET_CHANGE_COL].tolist()[2] == 4  # 5 - 1: 2017 now continues from 2016
+    # next run: history already present, nothing to add
+    assert update_symbol("MEXICAN PESO", cleaned(recent), tmp_path, lambda: history).mode == UNCHANGED
+
+
+def test_update_symbol_does_not_rewrite_when_history_has_nothing_older(tmp_path):
+    update_symbol("BITCOIN", cleaned([]), tmp_path, lambda: None)
+    rows = [("BITCOIN - CHICAGO MERCANTILE EXCHANGE", "2018-04-10", 1, 1, 0)]
+    update_symbol("BITCOIN", cleaned(rows), tmp_path, lambda: None)
+    history = cleaned([(PESO, "2016-12-27", 1, 1, 0)])  # other markets only
+    assert update_symbol("BITCOIN", cleaned(rows), tmp_path, lambda: history).mode == UNCHANGED
