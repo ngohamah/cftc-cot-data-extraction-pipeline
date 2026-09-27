@@ -24,11 +24,12 @@ differs from the plan below:
 | Prices (`saveClosingPrice`) | Not implemented | The function is no longer in the notebook; revisit if price enrichment is still wanted |
 | Logging | `logs/pipeline.log` + console; logs skipped years, dropped/duplicate rows, missing files | — |
 | Reporting | `reports/latest_signals.md`: plain-language table of each market's latest week | New (for non-technical readers) |
-| Tests / lint / CI | `tests/test_pipeline.py` (pytest, no network), `ruff` lint + format, GitHub Actions `ci.yml` on every push/PR, badge in README | CI runs lint + tests only; the weekly **scheduled** run (section 3) is not set up yet |
+| Tests / lint / CI | `tests/test_<module>.py` (pytest, no network), `ruff` lint + format, GitHub Actions `ci.yml` on every push/PR, badge in README | — |
+| Weekly scheduled run (added 2026-09-27) | `.github/workflows/weekly-update.yml`: Saturday and Sunday 06:00 UTC (+ manual run). Runs unit tests, restores `raw/legacy_fut_*.zip` from the Actions cache, runs `pipeline.py --start-year <last year>` (only last year and this year can gain weeks), commits changed `data/`, `signal/`, `reports/latest_signals.md` as `github-actions[bot]`, publishes the summary to the run page, uploads `logs/pipeline.log` (90 days), and fails the run if the pipeline reports problems | Chosen over local cron (section 3 recommendation). `FUT86_16.txt` isn't available in CI; not needed because the committed files already contain 1986-2016. Scheduled workflows only run from the default branch (`master`) |
 | Dependencies | `requirements.txt` (pinned: numpy, pandas, requests, urllib3, pytest, ruff) | — |
 
-Still open: scheduled weekly run (section 3), price enrichment (stage 5), and the
-Airflow version described in `plan.md`.
+Still open: switching the frontend from Google Sheets to `signal/*.csv` in this repo, price enrichment (stage 5),
+and the Airflow version described in `plan.md`.
 
 ## 1. What the notebook does today
 

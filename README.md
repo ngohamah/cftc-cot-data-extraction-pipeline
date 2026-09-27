@@ -1,6 +1,7 @@
 # COT Analysis
 
 [![CI](https://github.com/ngohamah/cot_analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/ngohamah/cot_analysis/actions/workflows/ci.yml)
+[![Weekly COT update](https://github.com/ngohamah/cot_analysis/actions/workflows/weekly-update.yml/badge.svg)](https://github.com/ngohamah/cot_analysis/actions/workflows/weekly-update.yml)
 
 The Commitments of Traders (COT) reports are published weekly by the Commodity Futures Trading Commission (CFTC) based on position data supplied by reporting firms (Futures Commission Merchants(FCMs), clearing members, foreign brokers and exchanges) on their investment behaviours in the futures and options markets across different exchanges in the US. Understanding this behaviour over time presents a good opportunity to identify trends and investment opportunities in different markets.
 
@@ -145,6 +146,25 @@ starts in 2017 and a warning is logged.
   `python pipeline.py --rebuild` to apply it.
 - **Explains itself.** Every decision (downloaded or not, appended, rewritten, skipped, dropped rows) is logged to
   `logs/pipeline.log`, and a plain-language summary is written to `reports/latest_signals.md`.
+
+## Weekly automatic update
+
+The GitHub Actions workflow [`weekly-update.yml`](.github/workflows/weekly-update.yml) runs the pipeline every
+**Saturday and Sunday at 06:00 UTC** (the CFTC publishes on Friday afternoon US time; Sunday is a catch-up run
+for late releases and does nothing if Saturday already got the new week). It can also be started by hand from the
+repository's **Actions** tab ("Run workflow"). Each run:
+
+1. runs the unit tests - no data is written if they fail,
+2. reuses the CFTC files saved by the previous run and downloads only if a new weekly report is due,
+3. appends the new week to `data/` and `signal/` and refreshes `reports/latest_signals.md`,
+4. commits those changes to the repository as `github-actions[bot]` (nothing is committed if there is no new report),
+5. shows the plain-language summary on the run's page and keeps `logs/pipeline.log` as a download for 90 days,
+6. marks the run as failed (GitHub emails you) if a download or a market could not be updated.
+
+Applications can read the latest signals straight from the repository, e.g.
+`https://raw.githubusercontent.com/ngohamah/cot_analysis/master/signal/GOLD.csv` (spaces in names are written
+`%20`, e.g. `signal/EURO%20FX.csv`). Columns are in the order: date, longs, shorts, change in longs, change in
+shorts, open interest, net positions, reading.
 
 ## Where to find data
 
