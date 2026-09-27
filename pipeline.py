@@ -6,12 +6,16 @@ Converted from cot_report_analysis.ipynb. Run with ``python pipeline.py``
 
 import argparse
 import datetime as dt
+import logging
+import os
 import sys
 from pathlib import Path
 
 import config
-from cot_pipeline.logging_setup import configure_logging
+from cot_pipeline.logging_setup import LOGGER_NAME, configure_logging
 from cot_pipeline.orchestrate import run
+
+logger = logging.getLogger(f"{LOGGER_NAME}.cli")
 
 
 def parse_args(argv=None):
@@ -37,10 +41,21 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
+def ci_run_description(env):
+    """'<event> run <url>' when running inside GitHub Actions, else None (for tracing bot commits)."""
+    if env.get("GITHUB_ACTIONS") != "true":
+        return None
+    url = f"{env.get('GITHUB_SERVER_URL', 'https://github.com')}/{env.get('GITHUB_REPOSITORY')}/actions/runs/"
+    return f"{env.get('GITHUB_EVENT_NAME', 'unknown')} run {url}{env.get('GITHUB_RUN_ID')}"
+
+
 def main(argv=None):
     """Command-line entry point: set up logging, run the pipeline for the chosen years, return the exit code."""
     args = parse_args(argv)
     configure_logging(args.log_file)
+    ci_run = ci_run_description(os.environ)
+    if ci_run:
+        logger.info("Started by GitHub Actions: %s", ci_run)
     years = list(range(args.start_year, args.end_year + 1))
     return run(
         years,

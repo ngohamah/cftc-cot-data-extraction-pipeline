@@ -8,7 +8,9 @@ DATA_DIR = PROJECT_ROOT / "data"
 SIGNAL_DIR = PROJECT_ROOT / "signal"
 RAW_DIR = PROJECT_ROOT / "raw"
 REPORT_DIR = PROJECT_ROOT / "reports"
-LOG_FILE = PROJECT_ROOT / "logs" / "pipeline.log"
+LOG_FILE = PROJECT_ROOT / "logs" / "pipeline.log"  # local runs; not in git
+# log of the weekly GitHub Actions run; committed by the bot so local logs are never overwritten on pull
+CI_LOG_FILE = PROJECT_ROOT / "logs" / "ci" / "pipeline.log"
 
 # legacy futures 1986-2016 (downloaded once with cot.cot_hist(store_txt=True)), kept in raw/
 # with the yearly batches; only years from FIRST_API_YEAR on are requested over HTTP
