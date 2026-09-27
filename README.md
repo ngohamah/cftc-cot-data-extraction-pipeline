@@ -66,6 +66,7 @@ python pipeline.py
 
 # useful options
 python pipeline.py --offline   # use saved reports in raw/ only, no downloads
+python pipeline.py --refresh   # re-download every year even if saved copies are up to date
 python pipeline.py --rebuild   # rebuild data/*.csv from raw/FUT86_16.txt + yearly reports
 python pipeline.py --help
 
@@ -78,7 +79,7 @@ jupyter lab
 ```
 
 Each run:
-- keeps all source data in `raw/`: the 1986-2016 history (`raw/FUT86_16.txt`, saved once, never downloaded) and one zip per year from 2017 on; each year is downloaded once and only the current year is re-downloaded on later runs,
+- keeps all source data in `raw/`: the 1986-2016 history (`raw/FUT86_16.txt`, saved once, never downloaded) and one zip per year from 2017 on; a year is downloaded only if its saved zip is missing, unreadable, or lacks the latest report the CFTC should have published by now (weekly, Fridays 15:30 US Eastern); years before 2017 are never downloaded and years with nothing published yet are skipped - every decision is logged,
 - **appends only new weeks** to `data/<symbol>.csv` and `signal/<symbol>.csv` (files are stored oldest-first; rows already saved are never rewritten, and a run with no new report writes nothing),
 - creates missing files from scratch, with the 1986-2016 history from `raw/FUT86_16.txt` placed before the 2017+ reports; a saved file that starts in 2017 or later gets that history added once (one full rewrite, logged); a file is rewritten in full only when it can't be appended to safely (e.g. the one-time switch from newest-first to oldest-first order), and the reason is logged,
 - keeps saved values if the CFTC revises a past week and logs a warning; run `python pipeline.py --rebuild` to apply revisions,
