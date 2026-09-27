@@ -49,7 +49,7 @@ jobs:
         id: pipeline
         run: |
           set +e
-          python pipeline.py --start-year "$(( $(date -u +%Y) - 1 ))"
+          python pipeline.py --start-year "$(( $(date -u +%Y) - 1 ))" --log-file logs/ci/pipeline.log
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Save CFTC reports for the next run
@@ -59,13 +59,17 @@ jobs:
           path: raw/legacy_fut_*.zip
           key: cftc-raw-${{ github.run_id }}
 
+      # The bot's log (logs/ci/pipeline.log) is committed with the data it describes; local runs log to
+      # logs/pipeline.log, which is not in git, so pulling never overwrites your local log.
       - name: Commit updated data
         run: |
-          git add data signal reports/latest_signals.md
+          # decide on data/ and signal/ only: the report's "Generated" time changes on every run
+          git add data signal
           if git diff --cached --quiet; then
-            echo "No new weekly report - nothing to commit."
+            echo "No new weekly report - nothing to commit (this run's log is in the uploaded artifact)."
             exit 0
           fi
+          git add reports/latest_signals.md logs/ci/pipeline.log
           latest=$(tail -n 1 "signal/GOLD.csv" | cut -d, -f1)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -83,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-log-${{ github.run_id }}
-          path: logs/pipeline.log
+          path: logs/ci/pipeline.log
           retention-days: 90
 
       - name: Fail the run if the pipeline reported problems
