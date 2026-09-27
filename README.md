@@ -157,8 +157,9 @@ repository's **Actions** tab ("Run workflow"). Each run:
 1. runs the unit tests - no data is written if they fail,
 2. reuses the CFTC files saved by the previous run and downloads only if a new weekly report is due,
 3. appends the new week to `data/` and `signal/` and refreshes `reports/latest_signals.md`,
-4. commits those changes to the repository as `github-actions[bot]` (nothing is committed if there is no new report),
-5. shows the plain-language summary on the run's page and keeps `logs/pipeline.log` as a download for 90 days,
+4. commits those changes to the repository as `github-actions[bot]`, together with its own log
+   `logs/ci/pipeline.log` (nothing is committed if there is no new report),
+5. shows the plain-language summary on the run's page and keeps the run's log as a download for 90 days,
 6. marks the run as failed (GitHub emails you) if a download or a market could not be updated.
 
 Applications can read the latest signals straight from the repository, e.g.
@@ -174,7 +175,7 @@ shorts, open interest, net positions, reading.
 | `signal/` | One CSV per market: the same weeks with the signal reading (Bullish, Bearish, ...) |
 | `reports/` | `latest_signals.md` - latest week per market in plain language; `history_parity.md` - result of the history check |
 | `raw/` | Source data: `FUT86_16.txt` (1986-2016) and `legacy_fut_<year>.zip` (2017 on); not stored in git |
-| `logs/` | `pipeline.log` - what every run did; not stored in git |
+| `logs/` | `pipeline.log` - what your local runs did (not stored in git); `ci/pipeline.log` - what the weekly bot did, committed by the bot, each run starting with a link to its GitHub Actions run |
 
 ## Code layout
 
