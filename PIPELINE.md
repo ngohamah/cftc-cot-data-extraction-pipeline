@@ -5,6 +5,29 @@ some are commented out to avoid re-downloading data, and outputs are saved by
 re-executing the notebook. This doc describes how to turn that notebook into an
 unattended pipeline (`pipeline.py`) that runs on a schedule with no manual steps.
 
+## 0. Status (updated 2026-09-27)
+
+`pipeline.py` now runs the notebook end to end (`python pipeline.py`) and reproduces the
+notebook's `data/` and `signal/` output row-for-row. What was built, and where it
+differs from the plan below:
+
+| Plan item | What was done | Change from plan |
+|---|---|---|
+| Package layout (`pipeline/ingest.py`, `normalize.py`, …) | Single `pipeline.py` with stage sections (extract / transform / load / orchestration) + `config.py` for constants | Kept to one script + config for now; stages are pure functions so they can be split into modules later without changes |
+| Ingest via `cot.cot_year()` | Downloads the same CFTC zip (`deacot<year>.zip`) directly over **one** `requests.Session` (retries + timeout, closed after use) and saves each year to `raw/legacy_fut_<year>.zip`; past years are reused, only the current year is re-downloaded | Replaces `cot_reports` (it opened a new connection per call and wrote temp files to the working directory) |
+| Backfill as separate `scripts/backfill_legacy.py` | Integrated: `FUT86_16.txt` is read only when a `data/<symbol>.csv` is missing or with `--rebuild`; logs a warning if the file is absent | Keeps the "recreate deleted files" requirement working in one command |
+| Normalization | DJIA, USD index **and NZ dollar** (`NZ DOLLAR - CHICAGO MERCANTILE EXCHANGE`, CFTC name since Feb 2022) unified | NZ mapping was missing in the notebook, so NEW ZEALAND data stopped at 2022-02-01 |
+| De-dup / validation / atomic writes | Done: de-dup on market + date, required-column check, refuse to overwrite a file with fewer rows, temp-file-then-rename writes | — |
+| Signals | Vectorised (`np.select`), same codes 1-4 and same `signal/*.csv` columns | — |
+| Prices (`saveClosingPrice`) | Not implemented | The function is no longer in the notebook; revisit if price enrichment is still wanted |
+| Logging | `logs/pipeline.log` + console; logs skipped years, dropped/duplicate rows, missing files | — |
+| Reporting | `reports/latest_signals.md`: plain-language table of each market's latest week | New (for non-technical readers) |
+| Tests / lint / CI | `tests/test_pipeline.py` (pytest, no network), `ruff` lint + format, GitHub Actions `ci.yml` on every push/PR, badge in README | CI runs lint + tests only; the weekly **scheduled** run (section 3) is not set up yet |
+| Dependencies | `requirements.txt` (pinned: numpy, pandas, requests, urllib3, pytest, ruff) | — |
+
+Still open: scheduled weekly run (section 3), price enrichment (stage 5), and the
+Airflow version described in `plan.md`.
+
 ## 1. What the notebook does today
 
 Reading the notebook top to bottom, the logic falls into six stages:
@@ -76,7 +99,8 @@ makes it impossible to unit test or re-run a single stage in isolation.
 | Config | Inline lists in cells | Move to `pipeline/config.py` (or a YAML file) so adding a symbol doesn't require editing pipeline logic |
 | Backfill | Manual, one-time, reads local txt | Keep as a **separate one-off script** (`scripts/backfill_legacy.py`), not part of the recurring pipeline |
 | Update | `update_for_multiple_years(np.arange(2017, 2027))` — refetches every year, every run | Track the max date already in `data/<symbol>.csv`; only call `cot.cot_year()` for the current year (CFTC republishes the current year's file weekly) |
-| De-dup | `pd.concat([old_df, new_df])` | Concat then `drop_duplicates(subset=["As of Date in Form YYYY-MM-DD"], keep="last")` before writing |
+| De-dup | `pd.concat([old_df, new_df])` | Concat then `drop_duplicates(subset=["Market and Exchange Names", "As of Date in Form YYYY-MM-DD"], keep="last")` before writing — **done in notebook** (`merge_symbol_data`) |
+| Missing files | `pd.read_csv("data/<symbol>.csv")` crashed with `FileNotFoundError` if the file was deleted | If `data/<symbol>.csv` (or `data/`/`signal/` itself) is missing or unreadable, create it from the new report and log a warning; symbols with no rows and no file are skipped and logged — **done in notebook** (`modify_old_with_new`, `perform_signal`) |
 | Signals | `perform_signal()` reruns on entire history | Fine to keep recomputing signals for the whole file (cheap, ensures consistency) but only after ingestion has updated the source data |
 | Prices | `saveClosingPrice()` — full history, breaks after first symbol | Fix the loop (accumulate results per symbol, don't `return` early); fetch only from the last saved date forward |
 | Storage | Direct `to_csv` overwrite | Write to a temp file and rename on success, so a failed run never leaves a half-written CSV |
