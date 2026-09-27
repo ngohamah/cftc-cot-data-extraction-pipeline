@@ -1,8 +1,10 @@
-"""Extract: download CFTC yearly reports once, save them as batches, and load them back."""
+"""Extract: download CFTC yearly reports only when needed, save them as batches in raw/, and load them back."""
 
+import datetime as dt
 import io
 import logging
 import zipfile
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -20,9 +22,73 @@ def raw_zip_path(year, raw_dir):
     return raw_dir / f"legacy_fut_{year}.zip"
 
 
-def years_to_download(years, raw_dir, current_year, refresh=False):
-    """Years with no saved batch, plus the current year (CFTC updates it weekly)."""
-    return [year for year in years if refresh or year == current_year or not raw_zip_path(year, raw_dir).exists()]
+def latest_released_report_date(now):
+    """As-of date (Tuesday) of the newest COT report the CFTC should have published by now (tz-aware)."""
+    local = now.astimezone(ZoneInfo(config.RELEASE_TIMEZONE))
+    days_since_release_day = (local.weekday() - config.RELEASE_WEEKDAY) % 7
+    release_day = local.date() - dt.timedelta(days=days_since_release_day)
+    if days_since_release_day == 0 and local.time() < dt.time(config.RELEASE_HOUR, config.RELEASE_MINUTE):
+        release_day -= dt.timedelta(days=7)
+    return release_day - dt.timedelta(days=config.REPORT_DAYS_BEFORE_RELEASE)
+
+
+def last_report_day_of_year(year):
+    """Last Tuesday of year: the usual as-of date of a year's final weekly report."""
+    dec_31 = dt.date(year, 12, 31)
+    report_weekday = (config.RELEASE_WEEKDAY - config.REPORT_DAYS_BEFORE_RELEASE) % 7
+    return dec_31 - dt.timedelta(days=(dec_31.weekday() - report_weekday) % 7)
+
+
+def expected_latest_report(year, latest_released):
+    """Latest as-of date a complete copy of year's file should contain, or None if nothing is published yet."""
+    if year > latest_released.year:
+        return None
+    return min(last_report_day_of_year(year), latest_released)
+
+
+def saved_report_latest_date(path):
+    """Newest as-of date in a saved yearly zip, or None if it is missing or unreadable."""
+    if not path.exists():
+        return None
+    try:
+        dates = read_report_zip(path, usecols=[config.DATE_COL])[config.DATE_COL]
+        return pd.to_datetime(dates).max().date()
+    except (zipfile.BadZipFile, StopIteration, ValueError, pd.errors.ParserError):
+        return None
+
+
+def plan_downloads(years, raw_dir, now, refresh=False):
+    """Decide per year whether a download is needed: [(year, download?, reason)].
+
+    Years before FIRST_API_YEAR come from FUT86_16.txt, years with no report published yet are skipped,
+    and a saved zip is re-downloaded only if it is missing, unreadable, or lacks the latest expected week.
+    """
+    latest_released = latest_released_report_date(now)
+    tolerance = dt.timedelta(days=config.REPORT_DATE_TOLERANCE_DAYS)
+
+    def decide(year):
+        if year < config.FIRST_API_YEAR:
+            return year, False, f"covered by {config.HISTORICAL_FILENAME}"
+        expected = expected_latest_report(year, latest_released)
+        if expected is None:
+            return year, False, f"no report published for {year} yet, latest release is {latest_released}"
+        if refresh:
+            return year, True, "--refresh requested"
+        path = raw_zip_path(year, raw_dir)
+        saved_latest = saved_report_latest_date(path)
+        if saved_latest is None:
+            return year, True, "saved copy unreadable" if path.exists() else "no saved copy"
+        if saved_latest >= expected - tolerance:
+            return year, False, f"saved copy is up to date, latest report {saved_latest}"
+        return year, True, f"saved copy ends {saved_latest}, report for {expected} expected"
+
+    return [decide(year) for year in years]
+
+
+def report_years(years, now):
+    """Years that have (or should have) a yearly CFTC file: from FIRST_API_YEAR up to the latest release."""
+    latest_released = latest_released_report_date(now)
+    return [y for y in years if y >= config.FIRST_API_YEAR and expected_latest_report(y, latest_released)]
 
 
 def make_session(retries=config.REQUEST_RETRIES):
@@ -57,12 +123,12 @@ def download_reports(years, raw_dir, session_factory=make_session):
     return failed
 
 
-def read_report_zip(path):
-    """Read the single .txt report inside a CFTC zip."""
+def read_report_zip(path, usecols=None):
+    """Read the single .txt report inside a CFTC zip (optionally only usecols)."""
     with zipfile.ZipFile(path) as archive:
         name = next(n for n in archive.namelist() if n.lower().endswith(".txt"))
         with archive.open(name) as handle:
-            return pd.read_csv(handle, low_memory=False)
+            return pd.read_csv(handle, usecols=usecols, low_memory=False)
 
 
 def load_saved_reports(years, raw_dir):

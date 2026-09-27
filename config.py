@@ -19,6 +19,14 @@ HISTORICAL_FILE = RAW_DIR / HISTORICAL_FILENAME
 # yearly legacy futures report (same file cot_reports.cot_year downloads)
 CFTC_YEAR_URL = "https://cftc.gov/files/dea/history/deacot{year}.zip"
 FIRST_API_YEAR = 2017
+# CFTC publishes each Friday 15:30 US Eastern, with positions as of the Tuesday 3 days earlier
+RELEASE_TIMEZONE = "America/New_York"
+RELEASE_WEEKDAY = 4  # Friday (Monday = 0)
+RELEASE_HOUR, RELEASE_MINUTE = 15, 30
+REPORT_DAYS_BEFORE_RELEASE = 3
+# holiday weeks move the as-of date (e.g. to Monday); a saved copy counts as up to date if it has
+# a report within this many days before the expected as-of date
+REPORT_DATE_TOLERANCE_DAYS = 6
 REQUEST_TIMEOUT_SECONDS = 60
 REQUEST_RETRIES = 3
 

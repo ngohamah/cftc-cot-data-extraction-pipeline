@@ -16,7 +16,8 @@ from cot_pipeline.extract import (
     historical_file_path,
     load_historical_file,
     load_saved_reports,
-    years_to_download,
+    plan_downloads,
+    report_years,
 )
 from cot_pipeline.report import render_report, summarise_symbol
 from cot_pipeline.signals import compute_signals
@@ -178,17 +179,20 @@ def memoize(func):
 
 def run(years, data_dir, signal_dir, raw_dir, report_dir, refresh=False, rebuild=False, offline=False):
     """Run every stage; returns a process exit code (0 ok, 1 finished with problems)."""
-    now = dt.datetime.now()
+    now = dt.datetime.now(dt.UTC)
     problems = []
     logger.info("Pipeline started for years %s-%s", years[0], years[-1])
 
     if offline:
         logger.info("Offline mode - using saved reports in %s only", raw_dir)
     else:
-        failed = download_reports(years_to_download(years, raw_dir, now.year, refresh), raw_dir)
+        plan = plan_downloads(years, raw_dir, now, refresh)
+        for year, download, reason in plan:
+            logger.info("%s report: %s (%s)", year, "download" if download else "not downloaded", reason)
+        failed = download_reports([year for year, download, _ in plan if download], raw_dir)
         problems += [f"Could not download the {y} report; saved copy used if available." for y in failed]
 
-    raw_reports = load_saved_reports(years, raw_dir)
+    raw_reports = load_saved_reports(report_years(years, now), raw_dir)
     try:
         new_rows, dropped = clean_report(raw_reports) if len(raw_reports) else (raw_reports, 0)
     except ValueError as err:
@@ -218,7 +222,7 @@ def run(years, data_dir, signal_dir, raw_dir, report_dir, refresh=False, rebuild
             problems.append(f"{symbol} could not be updated ({err}).")
 
     report_path = report_dir / "latest_signals.md"
-    write_text(render_report(summaries, now, problems), report_path)
+    write_text(render_report(summaries, now.astimezone(), problems), report_path)
     logger.info("Saved %s", report_path)
     logger.info(
         "Pipeline finished: %d symbols processed, %d new records written, %d problems",

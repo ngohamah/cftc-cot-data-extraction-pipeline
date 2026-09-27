@@ -20,7 +20,9 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="Download, clean and score CFTC Commitments of Traders data.")
     parser.add_argument("--start-year", type=int, default=config.FIRST_API_YEAR)
     parser.add_argument("--end-year", type=int, default=current_year)
-    parser.add_argument("--refresh", action="store_true", help="re-download every year, not just new/current ones")
+    parser.add_argument(
+        "--refresh", action="store_true", help="re-download every year even if saved copies are up to date"
+    )
     parser.add_argument(
         "--rebuild", action="store_true", help="ignore saved data/*.csv and rebuild from history + reports"
     )
