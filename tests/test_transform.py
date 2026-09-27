@@ -3,7 +3,14 @@ import pytest
 from helpers import GOLD, PESO, report
 
 import config
-from cot_pipeline.transform import clean_report, merge_symbol_data, rows_for_symbol
+from cot_pipeline.transform import (
+    clean_report,
+    extend_with_net_positions,
+    merge_symbol_data,
+    rewrite_reason,
+    rows_for_symbol,
+    split_incoming,
+)
 
 
 def test_clean_report_filters_markets_and_unifies_names():
@@ -37,16 +44,44 @@ def test_every_configured_market_maps_to_a_symbol():
     assert [mx for mx in unified if not any(sym in mx for sym in config.SYMBOL_NAMES)] == []
 
 
-def test_merge_symbol_data_dedups_and_computes_net_positions():
+def test_merge_symbol_data_dedups_and_computes_net_positions_oldest_first():
     old = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])
     new = report([(PESO, "2024-01-09", 30, 5, 0), (PESO, "2024-01-16", 25, 5, 0)])
     merged, duplicates = merge_symbol_data([None, old, new])
     assert duplicates == 1
-    assert merged[config.DATE_COL].tolist() == ["2024-01-16", "2024-01-09", "2024-01-02"]
-    assert merged[config.NET_COL].tolist() == [20, 25, 5]  # newer report wins for 2024-01-09
-    assert merged[config.NET_CHANGE_COL].tolist()[:2] == [-5, 20]
-    assert pd.isna(merged[config.NET_CHANGE_COL].iloc[-1])
+    assert merged[config.DATE_COL].tolist() == ["2024-01-02", "2024-01-09", "2024-01-16"]
+    assert merged[config.NET_COL].tolist() == [5, 25, 20]  # newer report wins for 2024-01-09
+    assert pd.isna(merged[config.NET_CHANGE_COL].iloc[0])
+    assert merged[config.NET_CHANGE_COL].tolist()[1:] == [20, -5]
     assert list(merged.columns) == config.DATA_COLUMNS
+
+
+def test_split_incoming_returns_only_unsaved_records_and_counts_revisions():
+    saved = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])
+    incoming = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 99, 5, 0), (PESO, "2024-01-16", 1, 1, 0)])
+    new_rows, revised = split_incoming(saved, incoming)
+    assert new_rows[config.DATE_COL].tolist() == ["2024-01-16"]
+    assert revised == 1  # 2024-01-09 arrived with a different long position
+
+
+def test_extend_with_net_positions_continues_from_last_saved_week():
+    saved = merge_symbol_data([report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])])[0]
+    new_rows = report([(PESO, "2024-01-16", 25, 5, 0), (PESO, "2024-01-23", 12, 5, 0)])
+    extended = extend_with_net_positions(saved, new_rows)
+    assert extended[config.DATE_COL].tolist() == ["2024-01-16", "2024-01-23"]
+    assert extended[config.NET_CHANGE_COL].tolist() == [5, -13]  # 20 - 15, then 7 - 20
+    assert list(extended.columns) == config.DATA_COLUMNS
+
+
+def test_rewrite_reason():
+    saved = merge_symbol_data([report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])])[0]
+    later = report([(PESO, "2024-01-16", 1, 1, 0)])
+    earlier = report([(PESO, "2023-12-26", 1, 1, 0)])
+    assert rewrite_reason(saved.columns, saved, later) is None
+    assert "older" in rewrite_reason(saved.columns, saved, earlier)
+    assert "oldest-first" in rewrite_reason(saved.columns, saved.iloc[::-1], later)
+    assert "column layout" in rewrite_reason(saved.columns[:-1], saved, later)
+    assert "duplicate" in rewrite_reason(saved.columns, pd.concat([saved, saved.iloc[[-1]]]), later)
 
 
 def test_rows_for_symbol_matches_all_name_variants():
