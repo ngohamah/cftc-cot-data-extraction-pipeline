@@ -8,77 +8,23 @@ The Commitments of Traders (COT) reports are published weekly by the Commodity F
 ## Simple Workflow
 
 ```text
-             ┌─────────────────────────────────┐
-             │       Input configuration       │
-             │            config.py            │
-             │ tracked symbols, market names,  │
-             │ columns, folders, CFTC schedule │
-             └────────────────┬────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-┌───────────────────────────┐   ┌───────────────────────────┐
-│     History 1986-2016     │   │ Yearly reports 2017-today │
-│ raw/FUT86_16.txt          │   │ raw/legacy_fut_<year>.zip │
-│ saved once, never         │   │ downloaded only when the  │
-│ downloaded; verified 1:1  │   │ file is missing or a new  │
-│ vs the CFTC yearly files  │   │ weekly report is due      │
-└─────────────┬─────────────┘   └─────────────┬─────────────┘
-              │                               │
-              └── extract.py ─┬───────────────┘
-                              ▼
-             ┌─────────────────────────────────┐
-             │      Clean and synchronise      │
-             │           transform.py          │
-             │ keep tracked markets, unify     │
-             │ renamed markets, parse dates    │
-             │ and numbers                     │
-             └────────────────┬────────────────┘
-                              │
-                              ▼
-             ┌─────────────────────────────────┐
-             │      Merge with saved data      │
-             │           transform.py          │
-             │ keep only weeks not saved yet,  │
-             │ add 1986-2016 history if it is  │
-             │ missing, compute net positions  │
-             └────────────────┬────────────────┘
-                              │
-                              ▼
-             ┌─────────────────────────────────┐
-             │             Signals             │
-             │            signals.py           │
-             │ Bullish, Bearish, Bullish       │
-             │ Reversal, Bearish Reversal      │
-             └────────────────┬────────────────┘
-                              │
-                              ▼
-             ┌─────────────────────────────────┐
-             │ Storage (append new weeks only) │
-             │            storage.py           │
-             │ data/<symbol>.csv               │
-             │ signal/<symbol>.csv             │
-             └────────────────┬────────────────┘
-                              │
-                              ▼
-             ┌─────────────────────────────────┐
-             │        Reporting and logs       │
-             │            report.py            │
-             │ reports/latest_signals.md       │
-             │ logs/pipeline.log               │
-             └────────────────┬────────────────┘
-                              │
-                              ▼
-             ┌─────────────────────────────────┐
-             │           Consumption           │
-             │ frontend dashboard, trading     │
-             │ and analysis                    │
-             └─────────────────────────────────┘
+┌──────────────┐
+│   History    │
+│  1986-2016   │──┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ FUT86_16.txt │  │  │ Clean, merge│  │   Signals   │  │  Append to  │  │ Report, logs│  │  Frontend,  │
+└──────────────┘  ├─▶│  new weeks  │─▶│ Bull / Bear │─▶│ data, signal│─▶│   reports/  │─▶│   trading,  │
+┌──────────────┐  │  │ transform.py│  │  signals.py │  │  storage.py │  │  report.py  │  │   analysis  │
+│ Yearly zips  │  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+│  2017-today  │──┘
+│  extract.py  │
+└──────────────┘
 ```
 
-`orchestrate.py` runs these steps for every tracked market, and `pipeline.py` is the command you run.
-A separate check, `scripts/verify_history_parity.py`, confirms the saved 1986-2016 history is identical to the
-CFTC's own yearly files (last run 2026-09-27: 31 of 31 years identical).
+`config.py` sets the tracked markets, columns and folders. `extract.py` reads the saved 1986-2016 history and
+the yearly CFTC files, downloading a year only when its file is missing or a new weekly report is due (Fridays
+15:30 US Eastern). Each run appends only the weeks not saved yet, and `orchestrate.py` runs the steps for every
+market (`pipeline.py` is the command you run). A separate check, `scripts/verify_history_parity.py`, confirms the
+saved history is identical to the CFTC's own yearly files (last run 2026-09-27: 31 of 31 years identical).
 
 ## What the signals mean
 
