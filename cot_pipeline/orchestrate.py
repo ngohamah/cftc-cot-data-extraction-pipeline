@@ -40,6 +40,8 @@ CREATED, REWRITTEN, APPENDED, UNCHANGED = "created", "rewritten", "appended", "u
 
 @dataclass(frozen=True)
 class SymbolUpdate:
+    """Outcome of updating one symbol's data file during a run."""
+
     data: pd.DataFrame  # full history after this run, oldest first
     written: pd.DataFrame  # rows written to the file this run
     mode: str  # CREATED | REWRITTEN | APPENDED | UNCHANGED
@@ -47,6 +49,13 @@ class SymbolUpdate:
 
 
 def create_symbol_file(symbol, path, incoming, get_history, rebuild):
+    """Write data/<symbol>.csv from scratch: 1986-2016 history (if available) followed by the new reports.
+
+    Used when the file is missing or unreadable, or when rebuild=True (the saved file is then overwritten).
+    incoming holds the symbol's cleaned 2017+ report rows; get_history returns the cleaned history rows
+    for all markets, or None if raw/FUT86_16.txt is unavailable. Returns a SymbolUpdate (mode CREATED),
+    or None if there is no data at all, in which case no file is written.
+    """
     history_rows = get_history()
     history = None if history_rows is None else rows_for_symbol(history_rows, symbol)
     sources = [history, incoming]
@@ -159,6 +168,7 @@ def memoize(func):
     cache = {}
 
     def wrapper():
+        """Return the cached result, calling func on first use."""
         if "value" not in cache:
             cache["value"] = func()
         return cache["value"]
@@ -189,6 +199,7 @@ def run(years, data_dir, signal_dir, raw_dir, report_dir, refresh=False, rebuild
 
     @memoize
     def get_history():
+        """Cleaned 1986-2016 history for all markets, or None if the file is unavailable (read at most once per run)."""
         history = load_historical_file(historical_file_path(raw_dir))
         return None if history is None else clean_report(history)[0]
 

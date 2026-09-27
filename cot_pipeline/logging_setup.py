@@ -10,6 +10,7 @@ LOGGER_NAME = "cot_pipeline"
 
 
 def configure_logging(log_file=config.LOG_FILE):
+    """Send pipeline logs to log_file (full history) and the console; safe to call more than once."""
     log_file.parent.mkdir(parents=True, exist_ok=True)
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
     file_handler = logging.FileHandler(log_file)

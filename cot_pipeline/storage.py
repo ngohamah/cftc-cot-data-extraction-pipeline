@@ -28,18 +28,22 @@ def write_atomically(path, write):
 
 
 def write_csv(dataframe, path):
+    """Write dataframe to path in full (no index), atomically."""
     write_atomically(path, lambda tmp: dataframe.to_csv(tmp, index=False))
 
 
 def write_text(text, path):
+    """Write text to path in full, atomically."""
     write_atomically(path, lambda tmp: Path(tmp).write_text(text))
 
 
 def write_bytes(data, path):
+    """Write raw bytes (e.g. a downloaded zip) to path in full, atomically."""
     write_atomically(path, lambda tmp: Path(tmp).write_bytes(data))
 
 
 def ends_with_newline(path):
+    """True if the file at path is empty or its last byte is a newline (safe to append rows)."""
     with open(path, "rb") as handle:
         if handle.seek(0, os.SEEK_END) == 0:
             return True

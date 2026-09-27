@@ -11,6 +11,7 @@ KEY_COLUMNS = [config.MARKET_COL, config.DATE_COL]
 
 
 def missing_columns(dataframe, required=config.SPECIAL_COLUMNS):
+    """Columns from required that dataframe doesn't have (empty list if none are missing)."""
     return [c for c in required if c not in dataframe.columns]
 
 
@@ -46,10 +47,12 @@ def sort_oldest_first(dataframe):
 
 
 def is_oldest_first(dataframe):
+    """True if rows are in ascending date order (same-day rows allowed)."""
     return dataframe[config.DATE_COL].is_monotonic_increasing
 
 
 def has_duplicate_records(dataframe):
+    """True if any market + date pair appears more than once."""
     return dataframe.duplicated(subset=KEY_COLUMNS).any()
 
 

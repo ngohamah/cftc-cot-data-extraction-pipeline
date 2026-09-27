@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def raw_zip_path(year, raw_dir):
+    """Path of the saved CFTC zip for year inside raw_dir (raw/legacy_fut_<year>.zip)."""
     return raw_dir / f"legacy_fut_{year}.zip"
 
 
@@ -68,6 +69,7 @@ def load_saved_reports(years, raw_dir):
     """Load every saved yearly batch; missing/corrupt years are logged and skipped."""
 
     def load(year):
+        """Load one saved year, or None (logged) if its zip is missing or unreadable."""
         path = raw_zip_path(year, raw_dir)
         if not path.exists():
             logger.warning("No saved report for %s (%s missing) - year skipped", year, path)
@@ -85,6 +87,7 @@ def load_saved_reports(years, raw_dir):
 
 
 def historical_file_path(raw_dir):
+    """Path of the 1986-2016 history file inside raw_dir (raw/FUT86_16.txt)."""
     return raw_dir / config.HISTORICAL_FILENAME
 
 

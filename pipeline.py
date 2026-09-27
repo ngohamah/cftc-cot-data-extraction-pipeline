@@ -15,6 +15,7 @@ from cot_pipeline.orchestrate import run
 
 
 def parse_args(argv=None):
+    """Parse command-line options; defaults come from config.py (argv=None reads sys.argv)."""
     current_year = dt.date.today().year
     parser = argparse.ArgumentParser(description="Download, clean and score CFTC Commitments of Traders data.")
     parser.add_argument("--start-year", type=int, default=config.FIRST_API_YEAR)
@@ -35,6 +36,7 @@ def parse_args(argv=None):
 
 
 def main(argv=None):
+    """Command-line entry point: set up logging, run the pipeline for the chosen years, return the exit code."""
     args = parse_args(argv)
     configure_logging(args.log_file)
     years = list(range(args.start_year, args.end_year + 1))
