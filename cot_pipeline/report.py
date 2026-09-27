@@ -5,9 +5,9 @@ import pandas as pd
 import config
 
 
-def summarise_symbol(symbol, signals):
-    """One plain-language row describing a symbol's latest week."""
-    latest = signals.iloc[0]
+def summarise_symbol(symbol, signals, new_weeks):
+    """One plain-language row describing a symbol's latest week (signals are oldest-first)."""
+    latest = signals.iloc[-1]
     return {
         "Market": symbol,
         "Week of": latest[config.DATE_COL],
@@ -16,6 +16,7 @@ def summarise_symbol(symbol, signals):
         if pd.isna(latest[config.NET_CHANGE_COL])
         else f"{int(latest[config.NET_CHANGE_COL]):+,}",
         "Reading": latest["Interpretation"],
+        "New weeks added this run": new_weeks,
     }
 
 
