@@ -10,8 +10,10 @@ RAW_DIR = PROJECT_ROOT / "raw"
 REPORT_DIR = PROJECT_ROOT / "reports"
 LOG_FILE = PROJECT_ROOT / "logs" / "pipeline.log"
 
-# legacy futures 1986-2016, downloaded once with cot.cot_hist(store_txt=True)
-HISTORICAL_FILE = PROJECT_ROOT / "old_data" / "FUT86_16.txt"
+# legacy futures 1986-2016 (downloaded once with cot.cot_hist(store_txt=True)), kept in raw/
+# with the yearly batches; only years from FIRST_API_YEAR on are requested over HTTP
+HISTORICAL_FILENAME = "FUT86_16.txt"
+HISTORICAL_FILE = RAW_DIR / HISTORICAL_FILENAME
 
 # --- CFTC source ---------------------------------------------------------
 # yearly legacy futures report (same file cot_reports.cot_year downloads)

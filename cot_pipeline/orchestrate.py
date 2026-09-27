@@ -4,7 +4,13 @@ import datetime as dt
 import logging
 
 import config
-from cot_pipeline.extract import download_reports, load_historical_file, load_saved_reports, years_to_download
+from cot_pipeline.extract import (
+    download_reports,
+    historical_file_path,
+    load_historical_file,
+    load_saved_reports,
+    years_to_download,
+)
 from cot_pipeline.report import render_report, summarise_symbol
 from cot_pipeline.signals import compute_signals
 from cot_pipeline.storage import read_existing, write_csv, write_text
@@ -62,7 +68,7 @@ def memoize(func):
     return wrapper
 
 
-def run(years, data_dir, signal_dir, raw_dir, report_dir, historical_file, refresh=False, rebuild=False, offline=False):
+def run(years, data_dir, signal_dir, raw_dir, report_dir, refresh=False, rebuild=False, offline=False):
     """Run every stage; returns a process exit code (0 ok, 1 finished with problems)."""
     now = dt.datetime.now()
     problems = []
@@ -85,7 +91,7 @@ def run(years, data_dir, signal_dir, raw_dir, report_dir, historical_file, refre
 
     @memoize
     def get_history():
-        history = load_historical_file(historical_file)
+        history = load_historical_file(historical_file_path(raw_dir))
         return None if history is None else clean_report(history)[0]
 
     summaries = []

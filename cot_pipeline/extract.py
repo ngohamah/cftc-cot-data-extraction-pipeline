@@ -84,8 +84,12 @@ def load_saved_reports(years, raw_dir):
     return pd.concat(reports, ignore_index=True) if reports else pd.DataFrame(columns=config.SPECIAL_COLUMNS)
 
 
+def historical_file_path(raw_dir):
+    return raw_dir / config.HISTORICAL_FILENAME
+
+
 def load_historical_file(path=config.HISTORICAL_FILE):
-    """Legacy futures 1986-2016 from the local file, or None if it is unavailable."""
+    """Legacy futures 1986-2016 from the saved file in raw/, or None if it is unavailable."""
     if not path.exists():
         logger.warning("%s not found - history before %s will be missing", path, config.FIRST_API_YEAR)
         return None

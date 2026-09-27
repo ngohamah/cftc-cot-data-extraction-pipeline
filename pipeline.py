@@ -26,9 +26,10 @@ def parse_args(argv=None):
     parser.add_argument("--offline", action="store_true", help="skip downloads and use saved reports in raw/")
     parser.add_argument("--data-dir", type=Path, default=config.DATA_DIR)
     parser.add_argument("--signal-dir", type=Path, default=config.SIGNAL_DIR)
-    parser.add_argument("--raw-dir", type=Path, default=config.RAW_DIR)
+    parser.add_argument(
+        "--raw-dir", type=Path, default=config.RAW_DIR, help="saved source data: FUT86_16.txt + yearly zips"
+    )
     parser.add_argument("--report-dir", type=Path, default=config.REPORT_DIR)
-    parser.add_argument("--historical-file", type=Path, default=config.HISTORICAL_FILE)
     parser.add_argument("--log-file", type=Path, default=config.LOG_FILE)
     return parser.parse_args(argv)
 
@@ -43,7 +44,6 @@ def main(argv=None):
         args.signal_dir,
         args.raw_dir,
         args.report_dir,
-        args.historical_file,
         refresh=args.refresh,
         rebuild=args.rebuild,
         offline=args.offline,

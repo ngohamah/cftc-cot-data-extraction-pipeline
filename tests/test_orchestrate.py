@@ -27,9 +27,7 @@ def test_run_offline_end_to_end(tmp_path):
     raw_zip_path(2024, raw).write_bytes(
         zip_bytes(report([(PESO, "2024-01-02", 10, 5, 2), (PESO, "2024-01-09", 30, 5, 2)]))
     )
-    code = run(
-        [2024], tmp_path / "data", tmp_path / "signal", raw, tmp_path / "reports", tmp_path / "none.txt", offline=True
-    )
+    code = run([2024], tmp_path / "data", tmp_path / "signal", raw, tmp_path / "reports", offline=True)
     signals = pd.read_csv(tmp_path / "signal" / "MEXICAN PESO.csv")
     assert list(signals.columns) == config.SIGNAL_COLUMNS
     assert signals["Interpretation"].tolist() == ["Bullish", "No signal"]
