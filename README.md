@@ -80,7 +80,7 @@ jupyter lab
 Each run:
 - keeps all source data in `raw/`: the 1986-2016 history (`raw/FUT86_16.txt`, saved once, never downloaded) and one zip per year from 2017 on; each year is downloaded once and only the current year is re-downloaded on later runs,
 - **appends only new weeks** to `data/<symbol>.csv` and `signal/<symbol>.csv` (files are stored oldest-first; rows already saved are never rewritten, and a run with no new report writes nothing),
-- creates missing files from scratch (the 1986-2016 history comes from `raw/FUT86_16.txt` if it is present); a file is rewritten in full only when it can't be appended to safely (e.g. the one-time switch from newest-first to oldest-first order), and the reason is logged,
+- creates missing files from scratch, with the 1986-2016 history from `raw/FUT86_16.txt` placed before the 2017+ reports; a saved file that starts in 2017 or later gets that history added once (one full rewrite, logged); a file is rewritten in full only when it can't be appended to safely (e.g. the one-time switch from newest-first to oldest-first order), and the reason is logged,
 - keeps saved values if the CFTC revises a past week and logs a warning; run `python pipeline.py --rebuild` to apply revisions,
 - writes a plain-language summary to `reports/latest_signals.md`,
 - logs every step, including skipped years, dropped rows and missing files, to `logs/pipeline.log`.
