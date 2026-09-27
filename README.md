@@ -74,6 +74,9 @@ python pipeline.py --help
 ruff check . && ruff format --check .
 pytest
 
+# verify raw/FUT86_16.txt matches the CFTC's own 1986-2016 yearly files (downloads each year once)
+python scripts/verify_history_parity.py
+
 # optional: explore the data in the notebook (ensure you have jupyter installed)
 jupyter lab
 ```
@@ -98,6 +101,7 @@ Constants (paths, markets, symbols, columns) live in `config.py`. The pipeline c
 | `cot_pipeline/report.py` | Plain-language summary in `reports/latest_signals.md` |
 | `cot_pipeline/orchestrate.py` | Runs the stages in order for every symbol |
 | `cot_pipeline/logging_setup.py` | Logging to `logs/pipeline.log` and the console |
+| `cot_pipeline/parity.py` | Compares the history file with per-year CFTC files (used by `scripts/verify_history_parity.py`) |
 
 The plan and implementation status are in [`docs/PIPELINE.md`](docs/PIPELINE.md); the original notebook is in `docs/`.
 
