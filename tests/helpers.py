@@ -31,6 +31,7 @@ def report(rows):
 
 
 def zip_bytes(frame):
+    """Bytes of a CFTC-style zip holding frame as annual.txt."""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr("annual.txt", frame.to_csv(index=False))

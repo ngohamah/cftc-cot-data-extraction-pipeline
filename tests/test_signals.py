@@ -17,6 +17,7 @@ from cot_pipeline.signals import compute_signals
     ],
 )
 def test_compute_signals(net_change, oi_change, expected):
+    """Each combination of net-position and open-interest change maps to its signal code."""
     frame = pd.DataFrame({config.NET_CHANGE_COL: [net_change], config.OPEN_INTEREST_CHANGE_COL: [oi_change]})
     result = compute_signals(frame).iloc[0]
     assert (result["signal"], result["Interpretation"]) == expected

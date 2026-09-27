@@ -4,6 +4,7 @@ from cot_pipeline.storage import append_csv
 
 
 def test_append_csv_adds_rows_without_header_and_keeps_saved_bytes(tmp_path):
+    """Appending adds rows only; the saved content is unchanged."""
     path = tmp_path / "x.csv"
     path.write_text("a,b\n1,2\n")
     append_csv(pd.DataFrame({"a": [3], "b": [4]}), path)
@@ -11,6 +12,7 @@ def test_append_csv_adds_rows_without_header_and_keeps_saved_bytes(tmp_path):
 
 
 def test_append_csv_adds_missing_trailing_newline(tmp_path):
+    """A file without a trailing newline gets one before rows are appended."""
     path = tmp_path / "x.csv"
     path.write_text("a,b\n1,2")
     append_csv(pd.DataFrame({"a": [3], "b": [4]}), path)

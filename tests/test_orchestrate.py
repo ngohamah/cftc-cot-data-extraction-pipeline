@@ -13,10 +13,12 @@ NEXT_WEEK = [(PESO, "2024-01-16", 25, 5, -1)]
 
 
 def cleaned(rows):
+    """Cleaned report rows built from (market, date, long, short, oi_change) tuples."""
     return clean_report(report(rows))[0]
 
 
 def test_update_symbol_creates_missing_file_from_history_and_new_rows(tmp_path):
+    """A missing file is created with history first, then the new reports."""
     history = cleaned([(PESO, "2016-12-27", 1, 1, 0)])
     update = update_symbol("MEXICAN PESO", cleaned([(PESO, "2024-01-02", 10, 5, 0)]), tmp_path, lambda: history)
     on_disk = pd.read_csv(tmp_path / "MEXICAN PESO.csv")
@@ -25,11 +27,13 @@ def test_update_symbol_creates_missing_file_from_history_and_new_rows(tmp_path):
 
 
 def test_update_symbol_skips_symbol_with_no_data(tmp_path):
+    """No file is written for a symbol with no rows anywhere."""
     assert update_symbol("GOLD", cleaned([]), tmp_path, lambda: None) is None
     assert not (tmp_path / "GOLD.csv").exists()
 
 
 def test_update_symbol_appends_only_new_records(tmp_path):
+    """A new week is appended and saved rows stay byte-for-byte identical."""
     update_symbol("MEXICAN PESO", cleaned(WEEKS), tmp_path, lambda: None)
     path = tmp_path / "MEXICAN PESO.csv"
     before = path.read_text()
@@ -44,6 +48,7 @@ def test_update_symbol_appends_only_new_records(tmp_path):
 
 
 def test_update_symbol_writes_nothing_when_no_new_records(tmp_path):
+    """Re-running with no new reports leaves the file untouched."""
     update_symbol("MEXICAN PESO", cleaned(WEEKS), tmp_path, lambda: None)
     path = tmp_path / "MEXICAN PESO.csv"
     before = path.read_bytes()
@@ -53,6 +58,7 @@ def test_update_symbol_writes_nothing_when_no_new_records(tmp_path):
 
 
 def test_update_symbol_converts_newest_first_file_once_then_appends(tmp_path):
+    """A legacy newest-first file is rewritten oldest-first once, then appended to."""
     newest_first = merge_symbol_data([cleaned(WEEKS)])[0].iloc[::-1]
     newest_first.to_csv(tmp_path / "MEXICAN PESO.csv", index=False)
     first = update_symbol("MEXICAN PESO", cleaned(WEEKS), tmp_path, lambda: None)
@@ -63,6 +69,7 @@ def test_update_symbol_converts_newest_first_file_once_then_appends(tmp_path):
 
 
 def test_update_symbol_logs_revised_records_and_keeps_saved_values(tmp_path, caplog):
+    """CFTC revisions to saved weeks are logged and the saved values are kept."""
     update_symbol("MEXICAN PESO", cleaned(WEEKS), tmp_path, lambda: None)
     revised = [(PESO, "2024-01-02", 999, 5, 2), WEEKS[1]]
     with caplog.at_level(logging.WARNING):
@@ -73,6 +80,7 @@ def test_update_symbol_logs_revised_records_and_keeps_saved_values(tmp_path, cap
 
 
 def test_update_signals_appends_new_signals_only(tmp_path):
+    """Signal files grow by the new weeks only."""
     data_dir, signal_dir = tmp_path / "data", tmp_path / "signal"
     update_signals("MEXICAN PESO", update_symbol("MEXICAN PESO", cleaned(WEEKS), data_dir, lambda: None), signal_dir)
     path = signal_dir / "MEXICAN PESO.csv"
@@ -85,6 +93,7 @@ def test_update_signals_appends_new_signals_only(tmp_path):
 
 
 def test_run_offline_end_to_end(tmp_path):
+    """An offline run writes data, signals and the report from saved zips."""
     raw = tmp_path / "raw"
     raw.mkdir()
     raw_zip_path(2024, raw).write_bytes(zip_bytes(report(WEEKS)))
@@ -97,6 +106,7 @@ def test_run_offline_end_to_end(tmp_path):
 
 
 def test_update_symbol_backfills_history_into_file_that_starts_in_2017(tmp_path):
+    """A file starting in 2017 gets older history added once, then stays unchanged."""
     recent = [(PESO, "2017-01-03", 10, 5, 0), (PESO, "2017-01-10", 20, 5, 0)]
     history = cleaned([(PESO, "2016-12-20", 1, 1, 0), (PESO, "2016-12-27", 2, 1, 0)])
     update_symbol("MEXICAN PESO", cleaned(recent), tmp_path, lambda: None)  # created without history
@@ -112,6 +122,7 @@ def test_update_symbol_backfills_history_into_file_that_starts_in_2017(tmp_path)
 
 
 def test_update_symbol_does_not_rewrite_when_history_has_nothing_older(tmp_path):
+    """A symbol with no older history (e.g. BITCOIN) is not rewritten."""
     update_symbol("BITCOIN", cleaned([]), tmp_path, lambda: None)
     rows = [("BITCOIN - CHICAGO MERCANTILE EXCHANGE", "2018-04-10", 1, 1, 0)]
     update_symbol("BITCOIN", cleaned(rows), tmp_path, lambda: None)

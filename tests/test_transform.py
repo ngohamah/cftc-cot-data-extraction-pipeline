@@ -14,6 +14,7 @@ from cot_pipeline.transform import (
 
 
 def test_clean_report_filters_markets_and_unifies_names():
+    """Unknown markets are dropped and renamed markets are unified."""
     raw = report(
         [
             (PESO, "2024-01-02", 10, 5, 1),
@@ -27,6 +28,7 @@ def test_clean_report_filters_markets_and_unifies_names():
 
 
 def test_clean_report_parses_padded_numbers_and_drops_bad_dates():
+    """Space-padded numbers are parsed and rows with unreadable dates are dropped."""
     raw = report([(PESO, "2024-01-02", 10, 5, 1), (PESO, "not a date", 1, 1, 1)])
     raw[config.OPEN_INTEREST_CHANGE_COL] = ["   -42", "1"]
     cleaned, dropped = clean_report(raw)
@@ -35,16 +37,19 @@ def test_clean_report_parses_padded_numbers_and_drops_bad_dates():
 
 
 def test_clean_report_rejects_missing_columns():
+    """A report without the required columns raises ValueError."""
     with pytest.raises(ValueError, match="missing required columns"):
         clean_report(pd.DataFrame({config.MARKET_COL: [PESO]}))
 
 
 def test_every_configured_market_maps_to_a_symbol():
+    """Every configured market name (after unification) belongs to a symbol."""
     unified = [config.MARKET_NAME_REPLACEMENTS.get(mx, mx) for mx in config.MARKETS_AND_EXCHANGES]
     assert [mx for mx in unified if not any(sym in mx for sym in config.SYMBOL_NAMES)] == []
 
 
 def test_merge_symbol_data_dedups_and_computes_net_positions_oldest_first():
+    """Merging keeps the newest copy of repeated weeks, sorts oldest-first and computes net positions."""
     old = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])
     new = report([(PESO, "2024-01-09", 30, 5, 0), (PESO, "2024-01-16", 25, 5, 0)])
     merged, duplicates = merge_symbol_data([None, old, new])
@@ -57,6 +62,7 @@ def test_merge_symbol_data_dedups_and_computes_net_positions_oldest_first():
 
 
 def test_split_incoming_returns_only_unsaved_records_and_counts_revisions():
+    """Only unsaved weeks are returned as new; changed saved weeks are counted as revisions."""
     saved = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])
     incoming = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 99, 5, 0), (PESO, "2024-01-16", 1, 1, 0)])
     new_rows, revised = split_incoming(saved, incoming)
@@ -65,6 +71,7 @@ def test_split_incoming_returns_only_unsaved_records_and_counts_revisions():
 
 
 def test_extend_with_net_positions_continues_from_last_saved_week():
+    """Net position changes for new weeks continue from the last saved week."""
     saved = merge_symbol_data([report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])])[0]
     new_rows = report([(PESO, "2024-01-16", 25, 5, 0), (PESO, "2024-01-23", 12, 5, 0)])
     extended = extend_with_net_positions(saved, new_rows)
@@ -74,6 +81,7 @@ def test_extend_with_net_positions_continues_from_last_saved_week():
 
 
 def test_rewrite_reason():
+    """Each unsafe-to-append condition gives a reason; a clean append gives None."""
     saved = merge_symbol_data([report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])])[0]
     later = report([(PESO, "2024-01-16", 1, 1, 0)])
     earlier = report([(PESO, "2023-12-26", 1, 1, 0)])
@@ -85,5 +93,6 @@ def test_rewrite_reason():
 
 
 def test_rows_for_symbol_matches_all_name_variants():
+    """Only rows whose market name contains the symbol are selected."""
     frame = report([(PESO, "2024-01-02", 1, 1, 1), (GOLD, "2024-01-02", 1, 1, 1)])
     assert rows_for_symbol(frame, "GOLD")[config.MARKET_COL].tolist() == [GOLD]
