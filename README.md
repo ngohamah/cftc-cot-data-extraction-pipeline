@@ -66,7 +66,7 @@ python pipeline.py
 
 # useful options
 python pipeline.py --offline   # use saved reports in raw/ only, no downloads
-python pipeline.py --rebuild   # rebuild data/*.csv from old_data/FUT86_16.txt + yearly reports
+python pipeline.py --rebuild   # rebuild data/*.csv from raw/FUT86_16.txt + yearly reports
 python pipeline.py --help
 
 # run lint and unit tests (same checks as CI)
@@ -78,8 +78,8 @@ jupyter lab
 ```
 
 Each run:
-- downloads each year's CFTC report once and saves it to `raw/` (only the current year is re-downloaded on later runs),
-- creates or updates `data/<symbol>.csv` and `signal/<symbol>.csv` (missing files are recreated; the 1986-2016 history comes from `old_data/FUT86_16.txt` if it is present),
+- keeps all source data in `raw/`: the 1986-2016 history (`raw/FUT86_16.txt`, saved once, never downloaded) and one zip per year from 2017 on; each year is downloaded once and only the current year is re-downloaded on later runs,
+- creates or updates `data/<symbol>.csv` and `signal/<symbol>.csv` (missing files are recreated; the 1986-2016 history comes from `raw/FUT86_16.txt` if it is present),
 - writes a plain-language summary to `reports/latest_signals.md`,
 - logs every step, including skipped years, dropped rows and missing files, to `logs/pipeline.log`.
 
@@ -88,7 +88,7 @@ Constants (paths, markets, symbols, columns) live in `config.py`. The pipeline c
 | File | What it does |
 |---|---|
 | `pipeline.py` | Command-line entry point (options, then calls `run`) |
-| `cot_pipeline/extract.py` | Downloads yearly CFTC reports once, saves them to `raw/`, loads them and `old_data/FUT86_16.txt` |
+| `cot_pipeline/extract.py` | Downloads yearly CFTC reports once, saves them to `raw/`, loads them and `raw/FUT86_16.txt` |
 | `cot_pipeline/transform.py` | Cleans reports, unifies market names, merges/de-duplicates, computes net positions |
 | `cot_pipeline/signals.py` | Bullish / Bearish / Reversal signal per week |
 | `cot_pipeline/storage.py` | Safe (atomic) file writes and reading saved CSVs |
