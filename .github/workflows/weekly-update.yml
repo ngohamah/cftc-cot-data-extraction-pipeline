@@ -1,0 +1,97 @@
+name: Weekly COT update
+
+# The CFTC publishes the Commitments of Traders report on Fridays at 15:30 US Eastern.
+# Run Saturday morning, and again Sunday in case the release was late (the Sunday run is a
+# no-op when Saturday already picked up the new week). Scheduled runs use the default branch.
+on:
+  schedule:
+    - cron: "0 6 * * 6" # Saturday 06:00 UTC
+    - cron: "0 6 * * 0" # Sunday 06:00 UTC
+  workflow_dispatch: # allow a manual run from the Actions tab
+
+permissions:
+  contents: write # commit the updated data/, signal/ and reports/ back to the repository
+
+concurrency:
+  group: weekly-cot-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Unit tests (no data is written if these fail)
+        run: pytest -q
+
+      # raw/ is not in git; reuse the yearly zips from the previous run so a year is only
+      # downloaded when a new weekly report is due (the pipeline checks this itself).
+      - name: Restore saved CFTC reports
+        uses: actions/cache/restore@v4
+        with:
+          path: raw/legacy_fut_*.zip
+          key: cftc-raw-${{ github.run_id }}
+          restore-keys: cftc-raw-
+
+      # Only last year and this year can gain new weeks (last year's final report is published in
+      # early January); older weeks are already in data/ and signal/.
+      - name: Run pipeline
+        id: pipeline
+        run: |
+          set +e
+          python pipeline.py --start-year "$(( $(date -u +%Y) - 1 ))" --log-file logs/ci/pipeline.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Save CFTC reports for the next run
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: raw/legacy_fut_*.zip
+          key: cftc-raw-${{ github.run_id }}
+
+      # The bot's log (logs/ci/pipeline.log) is committed with the data it describes; local runs log to
+      # logs/pipeline.log, which is not in git, so pulling never overwrites your local log.
+      - name: Commit updated data
+        run: |
+          # decide on data/ and signal/ only: the report's "Generated" time changes on every run
+          git add data signal
+          if git diff --cached --quiet; then
+            echo "No new weekly report - nothing to commit (this run's log is in the uploaded artifact)."
+            exit 0
+          fi
+          git add reports/latest_signals.md logs/ci/pipeline.log
+          latest=$(tail -n 1 "signal/GOLD.csv" | cut -d, -f1)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "weekly COT update: reports through ${latest}"
+          git pull --rebase
+          git push
+
+      - name: Publish run summary
+        if: always()
+        run: |
+          if [ -f reports/latest_signals.md ]; then cat reports/latest_signals.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload pipeline log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-log-${{ github.run_id }}
+          path: logs/ci/pipeline.log
+          retention-days: 90
+
+      - name: Fail the run if the pipeline reported problems
+        if: steps.pipeline.outputs.exit_code != '0'
+        run: |
+          echo "pipeline.py exited with ${{ steps.pipeline.outputs.exit_code }} - see the uploaded log and summary."
+          exit 1

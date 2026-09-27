@@ -1,0 +1,9 @@
+# runtime
+numpy==1.26.4
+pandas==2.2.2
+requests==2.32.3
+urllib3==2.8.0
+
+# development: tests and linting
+pytest==9.0.2
+ruff==0.16.9

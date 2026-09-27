@@ -4,3 +4,17 @@
 
 # ignore log files
 *.DS_Store
+
+# ignore heavy files
+old_data/FUT86_16.txt
+
+# backup notebook
+cot_report_analysis-backup.ipynb
+
+# pipeline outputs that are regenerated on every run
+raw/
+__pycache__/
+
+# local run logs stay on your machine; logs/ci/ is the weekly bot's log and is committed by it
+logs/*
+!logs/ci/
