@@ -79,7 +79,9 @@ jupyter lab
 
 Each run:
 - keeps all source data in `raw/`: the 1986-2016 history (`raw/FUT86_16.txt`, saved once, never downloaded) and one zip per year from 2017 on; each year is downloaded once and only the current year is re-downloaded on later runs,
-- creates or updates `data/<symbol>.csv` and `signal/<symbol>.csv` (missing files are recreated; the 1986-2016 history comes from `raw/FUT86_16.txt` if it is present),
+- **appends only new weeks** to `data/<symbol>.csv` and `signal/<symbol>.csv` (files are stored oldest-first; rows already saved are never rewritten, and a run with no new report writes nothing),
+- creates missing files from scratch (the 1986-2016 history comes from `raw/FUT86_16.txt` if it is present); a file is rewritten in full only when it can't be appended to safely (e.g. the one-time switch from newest-first to oldest-first order), and the reason is logged,
+- keeps saved values if the CFTC revises a past week and logs a warning; run `python pipeline.py --rebuild` to apply revisions,
 - writes a plain-language summary to `reports/latest_signals.md`,
 - logs every step, including skipped years, dropped rows and missing files, to `logs/pipeline.log`.
 
@@ -91,7 +93,7 @@ Constants (paths, markets, symbols, columns) live in `config.py`. The pipeline c
 | `cot_pipeline/extract.py` | Downloads yearly CFTC reports once, saves them to `raw/`, loads them and `raw/FUT86_16.txt` |
 | `cot_pipeline/transform.py` | Cleans reports, unifies market names, merges/de-duplicates, computes net positions |
 | `cot_pipeline/signals.py` | Bullish / Bearish / Reversal signal per week |
-| `cot_pipeline/storage.py` | Safe (atomic) file writes and reading saved CSVs |
+| `cot_pipeline/storage.py` | Appending new rows, safe (atomic) full writes, reading saved CSVs |
 | `cot_pipeline/report.py` | Plain-language summary in `reports/latest_signals.md` |
 | `cot_pipeline/orchestrate.py` | Runs the stages in order for every symbol |
 | `cot_pipeline/logging_setup.py` | Logging to `logs/pipeline.log` and the console |
