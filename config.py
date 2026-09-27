@@ -11,7 +11,7 @@ REPORT_DIR = PROJECT_ROOT / "reports"
 LOG_FILE = PROJECT_ROOT / "logs" / "pipeline.log"
 
 # legacy futures 1986-2016, downloaded once with cot.cot_hist(store_txt=True)
-HISTORICAL_FILE = PROJECT_ROOT / "FUT86_16.txt"
+HISTORICAL_FILE = PROJECT_ROOT / "old_data" / "FUT86_16.txt"
 
 # --- CFTC source ---------------------------------------------------------
 # yearly legacy futures report (same file cot_reports.cot_year downloads)
