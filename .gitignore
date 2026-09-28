@@ -18,3 +18,6 @@ __pycache__/
 # local run logs stay on your machine; logs/ci/ is the weekly bot's log and is committed by it
 logs/*
 !logs/ci/
+
+# ignore pipeline.md.
+docs/PIPELINE.md

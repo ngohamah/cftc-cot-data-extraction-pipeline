@@ -140,7 +140,7 @@ stage:
 | `cot_pipeline/logging_setup.py` | Logging to `logs/pipeline.log` and the console |
 | `cot_pipeline/parity.py` | Compares the history file with per-year CFTC files (used by `scripts/verify_history_parity.py`) |
 
-The plan and implementation status are in [`docs/PIPELINE.md`](docs/PIPELINE.md); the original notebook is in `docs/`.
+The original notebook is in `docs/`.
 
 ## References
 - [The Commitments of Traders Bible Book by Stephen Briese on Amazon](https://www.amazon.com/Commitments-Traders-Bible-Insider-Intelligence/dp/0470178426)
