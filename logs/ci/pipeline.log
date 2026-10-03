@@ -1,0 +1,44 @@
+2026-10-03 11:17:47,710 | INFO | Started by GitHub Actions: schedule run https://github.com/ngohamah/cftc-cot-data-extraction-pipeline/actions/runs/37119178469
+2026-10-03 11:17:47,710 | INFO | Pipeline started for years 2025-2026
+2026-10-03 11:17:47,903 | INFO | 2025 report: not downloaded (saved copy is up to date, latest report 2025-12-30)
+2026-10-03 11:17:47,904 | INFO | 2026 report: download (saved copy ends 2026-09-22, report for 2026-09-29 expected)
+2026-10-03 11:17:48,198 | INFO | Downloaded 2026 report (1883 KB) -> /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/raw/legacy_fut_2026.zip
+2026-10-03 11:17:48,372 | INFO | Loaded 2025 report: 17316 rows
+2026-10-03 11:17:48,511 | INFO | Loaded 2026 report: 14055 rows
+2026-10-03 11:17:48,556 | INFO | MEXICAN PESO: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/MEXICAN PESO.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,560 | INFO | MEXICAN PESO: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/MEXICAN PESO.csv
+2026-10-03 11:17:48,587 | INFO | JAPANESE YEN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/JAPANESE YEN.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,591 | INFO | JAPANESE YEN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/JAPANESE YEN.csv
+2026-10-03 11:17:48,614 | INFO | EURO FX: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/EURO FX.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,618 | INFO | EURO FX: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/EURO FX.csv
+2026-10-03 11:17:48,652 | INFO | DJIA Consolidated: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/DJIA Consolidated.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,656 | INFO | DJIA Consolidated: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/DJIA Consolidated.csv
+2026-10-03 11:17:48,681 | INFO | NASDAQ-100: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/NASDAQ-100.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,685 | INFO | NASDAQ-100: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/NASDAQ-100.csv
+2026-10-03 11:17:48,706 | INFO | NEW ZEALAND: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/NEW ZEALAND.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,710 | INFO | NEW ZEALAND: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/NEW ZEALAND.csv
+2026-10-03 11:17:48,735 | INFO | AUSTRALIAN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/AUSTRALIAN.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,739 | INFO | AUSTRALIAN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/AUSTRALIAN.csv
+2026-10-03 11:17:48,765 | INFO | CANADIAN DOLLAR: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/CANADIAN DOLLAR.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,769 | INFO | CANADIAN DOLLAR: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/CANADIAN DOLLAR.csv
+2026-10-03 11:17:48,795 | INFO | SWISS FRANC: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/SWISS FRANC.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,799 | INFO | SWISS FRANC: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/SWISS FRANC.csv
+2026-10-03 11:17:48,825 | INFO | POUND: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/POUND.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,829 | INFO | POUND: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/POUND.csv
+2026-10-03 11:17:48,854 | INFO | U.S. DOLLAR INDEX: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/U.S. DOLLAR INDEX.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,858 | INFO | U.S. DOLLAR INDEX: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/U.S. DOLLAR INDEX.csv
+2026-10-03 11:17:48,887 | INFO | SILVER: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/SILVER.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,891 | INFO | SILVER: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/SILVER.csv
+2026-10-03 11:17:48,917 | INFO | COPPER: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/COPPER.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,921 | INFO | COPPER: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/COPPER.csv
+2026-10-03 11:17:48,948 | INFO | GOLD: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/GOLD.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,952 | INFO | GOLD: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/GOLD.csv
+2026-10-03 11:17:48,978 | INFO | PLATINUM: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/PLATINUM.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:48,982 | INFO | PLATINUM: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/PLATINUM.csv
+2026-10-03 11:17:48,996 | WARNING | /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/raw/FUT86_16.txt not found - history before 2017 will be missing
+2026-10-03 11:17:49,004 | INFO | BITCOIN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/BITCOIN.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:49,007 | INFO | BITCOIN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/BITCOIN.csv
+2026-10-03 11:17:49,026 | INFO | CRUDE OIL: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/CRUDE OIL.csv (2026-09-29 to 2026-09-29)
+2026-10-03 11:17:49,029 | INFO | CRUDE OIL: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/CRUDE OIL.csv
+2026-10-03 11:17:49,031 | INFO | Saved /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/reports/latest_signals.md
+2026-10-03 11:17:49,031 | INFO | Pipeline finished: 17 symbols processed, 17 new records written, 0 problems
