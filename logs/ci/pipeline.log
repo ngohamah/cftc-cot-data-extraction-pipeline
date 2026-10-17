@@ -86,3 +86,47 @@
 2026-10-10 12:06:23,671 | INFO | CRUDE OIL: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/CRUDE OIL.csv
 2026-10-10 12:06:23,674 | INFO | Saved /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/reports/latest_signals.md
 2026-10-10 12:06:23,674 | INFO | Pipeline finished: 17 symbols processed, 17 new records written, 0 problems
+2026-10-17 10:19:52,654 | INFO | Started by GitHub Actions: schedule run https://github.com/ngohamah/cftc-cot-data-extraction-pipeline/actions/runs/39024460301
+2026-10-17 10:19:52,655 | INFO | Pipeline started for years 2025-2026
+2026-10-17 10:19:52,947 | INFO | 2025 report: not downloaded (saved copy is up to date, latest report 2025-12-30)
+2026-10-17 10:19:52,947 | INFO | 2026 report: download (saved copy ends 2026-10-06, report for 2026-10-13 expected)
+2026-10-17 10:19:53,086 | INFO | Downloaded 2026 report (1982 KB) -> /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/raw/legacy_fut_2026.zip
+2026-10-17 10:19:53,337 | INFO | Loaded 2025 report: 17316 rows
+2026-10-17 10:19:53,541 | INFO | Loaded 2026 report: 14795 rows
+2026-10-17 10:19:53,996 | INFO | MEXICAN PESO: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/MEXICAN PESO.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,093 | INFO | MEXICAN PESO: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/MEXICAN PESO.csv
+2026-10-17 10:19:54,248 | INFO | JAPANESE YEN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/JAPANESE YEN.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,295 | INFO | JAPANESE YEN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/JAPANESE YEN.csv
+2026-10-17 10:19:54,328 | INFO | EURO FX: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/EURO FX.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,334 | INFO | EURO FX: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/EURO FX.csv
+2026-10-17 10:19:54,368 | INFO | DJIA Consolidated: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/DJIA Consolidated.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,374 | INFO | DJIA Consolidated: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/DJIA Consolidated.csv
+2026-10-17 10:19:54,410 | INFO | NASDAQ-100: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/NASDAQ-100.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,416 | INFO | NASDAQ-100: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/NASDAQ-100.csv
+2026-10-17 10:19:54,448 | INFO | NEW ZEALAND: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/NEW ZEALAND.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,454 | INFO | NEW ZEALAND: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/NEW ZEALAND.csv
+2026-10-17 10:19:54,490 | INFO | AUSTRALIAN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/AUSTRALIAN.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,496 | INFO | AUSTRALIAN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/AUSTRALIAN.csv
+2026-10-17 10:19:54,534 | INFO | CANADIAN DOLLAR: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/CANADIAN DOLLAR.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,540 | INFO | CANADIAN DOLLAR: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/CANADIAN DOLLAR.csv
+2026-10-17 10:19:54,577 | INFO | SWISS FRANC: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/SWISS FRANC.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,583 | INFO | SWISS FRANC: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/SWISS FRANC.csv
+2026-10-17 10:19:54,620 | INFO | POUND: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/POUND.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,626 | INFO | POUND: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/POUND.csv
+2026-10-17 10:19:54,669 | INFO | U.S. DOLLAR INDEX: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/U.S. DOLLAR INDEX.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,675 | INFO | U.S. DOLLAR INDEX: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/U.S. DOLLAR INDEX.csv
+2026-10-17 10:19:54,717 | INFO | SILVER: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/SILVER.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,723 | INFO | SILVER: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/SILVER.csv
+2026-10-17 10:19:54,761 | INFO | COPPER: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/COPPER.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,766 | INFO | COPPER: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/COPPER.csv
+2026-10-17 10:19:54,804 | INFO | GOLD: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/GOLD.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,810 | INFO | GOLD: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/GOLD.csv
+2026-10-17 10:19:54,848 | INFO | PLATINUM: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/PLATINUM.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,855 | INFO | PLATINUM: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/PLATINUM.csv
+2026-10-17 10:19:54,875 | WARNING | /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/raw/FUT86_16.txt not found - history before 2017 will be missing
+2026-10-17 10:19:54,881 | INFO | BITCOIN: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/BITCOIN.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,886 | INFO | BITCOIN: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/BITCOIN.csv
+2026-10-17 10:19:54,913 | INFO | CRUDE OIL: appended 1 new records to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/data/CRUDE OIL.csv (2026-10-13 to 2026-10-13)
+2026-10-17 10:19:54,918 | INFO | CRUDE OIL: appended 1 new signals to /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/signal/CRUDE OIL.csv
+2026-10-17 10:19:54,922 | INFO | Saved /home/runner/work/cftc-cot-data-extraction-pipeline/cftc-cot-data-extraction-pipeline/reports/latest_signals.md
+2026-10-17 10:19:54,922 | INFO | Pipeline finished: 17 symbols processed, 17 new records written, 0 problems
