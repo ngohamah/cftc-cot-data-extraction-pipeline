@@ -17,6 +17,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # allow running from any folder
 
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")  # figures go to files only (no windows, works on servers)
+
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 

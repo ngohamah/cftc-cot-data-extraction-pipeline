@@ -1,14 +1,18 @@
 import importlib.util
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import pytest
-from helpers import GOLD
+import matplotlib
 
-import config
-from cot_pipeline import regimes
+matplotlib.use("Agg")  # no windows during tests
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
+from helpers import GOLD  # noqa: E402
+
+import config  # noqa: E402
+from cot_pipeline import regimes  # noqa: E402
 
 # (long share, short share) of open interest for four clearly different positioning states
 STATES = [(0.10, 0.35), (0.20, 0.12), (0.45, 0.20), (0.55, 0.08)]

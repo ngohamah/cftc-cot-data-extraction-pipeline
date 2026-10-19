@@ -3,17 +3,13 @@
 Every function takes ready-made data and returns a matplotlib Figure (nothing is saved or shown here).
 """
 
-import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.ticker import PercentFormatter
+from sklearn.metrics import silhouette_samples
 
-matplotlib.use("Agg")  # file output only; notebooks still display returned figures inline
-
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
-from matplotlib.ticker import PercentFormatter  # noqa: E402
-from sklearn.metrics import silhouette_samples  # noqa: E402
-
-import config  # noqa: E402
+import config
 
 STYLE = {
     "figure.facecolor": config.PLOT_SURFACE,
