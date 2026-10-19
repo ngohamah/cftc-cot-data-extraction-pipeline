@@ -161,6 +161,20 @@ option and keeps the CSVs versioned in git history.
    same signal values), the notebook becomes exploratory/analysis-only — it should
    no longer be the thing that produces `data/` and `signal/`.
 
+## 6. Analysis: positioning regimes (unsupervised, gold first)
+
+Added 2026-10-20 (branch `feature/gold-regimes`). Exploratory analysis, not part of the weekly run.
+
+- `cot_pipeline/regimes.py`: scale-free features (long/short/net as a share of open interest, 3-year
+  percentile of net, 4-week flows), a model scorecard (K-Means, Gaussian mixture, Ward, DBSCAN), K-Means
+  regimes ordered by net position, regime profiles, transitions and a Kruskal-Wallis test of what follows.
+- `cot_pipeline/regime_plots.py`: the eight figures; `scripts/gold_regimes.py` writes
+  `reports/gold_regimes.md`, `reports/gold_regimes_weekly.csv` and `reports/figures/gold_regimes/`.
+- Decisions: COMEX contract only (CBOT 100 oz / IMM rows dropped); regimes use the three slow "state"
+  features only (adding flows lowered separation for every k); `N_REGIMES = 4` from the scorecard.
+- Next: run for other symbols (settings are in `config.py`), add prices to test regimes against returns,
+  and try a time-aware model (hidden Markov model) once a baseline is agreed.
+
 ## References
 
 - [COT_Reports package by NDelventhal](https://github.com/NDelventhal/cot_reports)
