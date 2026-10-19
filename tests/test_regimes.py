@@ -161,3 +161,16 @@ def test_script_builds_every_figure_and_report():
     assert "## The regimes" in report and "figures/gold_regimes/2_model_selection.png" in report
     for _, figure in figures:
         plt.close(figure)
+
+
+def test_script_adds_price_figures_and_section_when_prices_are_saved():
+    from test_prices import daily_prices
+
+    script = load_script()
+    result = script.analyse(synthetic_gold(), prices=daily_prices(), rounds=2)
+    figures = script.build_figures(result)
+    assert len(figures) == 12
+    report = script.render_report(result, [name for name, _ in figures])
+    assert "## Gold price" in report and "## Further reading" in report and "## Words used" in report
+    for _, figure in figures:
+        plt.close(figure)

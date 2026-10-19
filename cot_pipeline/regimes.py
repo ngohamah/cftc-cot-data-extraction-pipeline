@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 REQUIRED_COLUMNS = ["market", "date", "long", "short", "open_interest", "net_positions"]
 FEATURE_COLUMNS = ["long_share", "short_share", "net_share", "cot_index", "net_flow_4w", "oi_growth_4w"]
 FORWARD_COLUMN = "forward_net_flow"
+FORWARD_RETURN_COLUMN = "forward_return"  # added by prices.add_price_features
 SUBSAMPLE_FRACTION = 0.8
 
 
@@ -230,8 +231,19 @@ def run_lengths(labels):
 
 
 def regime_profile(labelled, names=config.REGIME_NAMES):
-    """One row per regime: how often, how long it lasts, what it looks like and what tends to follow."""
+    """One row per regime: how often, how long it lasts, what it looks like and what tends to follow
+    (including gold's return afterwards when price data has been added)."""
     forward = labelled[FORWARD_COLUMN]
+    has_price = FORWARD_RETURN_COLUMN in labelled.columns
+    extra = {}
+    if has_price:
+        future_return = labelled[FORWARD_RETURN_COLUMN]
+        labelled = labelled.assign(rose=(future_return > 0).where(future_return.notna()))
+        extra = {
+            "forward_return": (FORWARD_RETURN_COLUMN, "mean"),
+            "share_price_rose": ("rose", "mean"),
+            "weeks_with_price": (FORWARD_RETURN_COLUMN, "count"),
+        }
     grouped = labelled.assign(added=(forward > 0).where(forward.notna())).groupby("regime")
     profile = grouped.agg(
         weeks=("date", "size"),
@@ -245,6 +257,7 @@ def regime_profile(labelled, names=config.REGIME_NAMES):
         oi_growth_4w=("oi_growth_4w", "mean"),
         forward_net_flow=(FORWARD_COLUMN, "mean"),
         share_added_next=("added", "mean"),
+        **extra,
     )
     typical_stay = run_lengths(labelled["regime"]).groupby("regime")["weeks"].mean()
     return profile.assign(
@@ -263,12 +276,36 @@ def transition_matrix(labels, n_regimes=config.N_REGIMES):
     return counts.div(counts.sum(axis=1).replace(0, np.nan), axis=0)
 
 
-def forward_flow_test(labelled, horizon=config.FORWARD_HORIZON_WEEKS):
-    """Kruskal-Wallis test of H0: the net-position change over the next `horizon` weeks has the same
-    distribution in every regime. Uses every horizon-th week so the forward windows don't overlap."""
-    sample = labelled.dropna(subset=[FORWARD_COLUMN]).iloc[::horizon]
-    groups = [g[FORWARD_COLUMN].to_numpy() for _, g in sample.groupby("regime") if len(g) > 1]
+def forward_flow_test(labelled, horizon=config.FORWARD_HORIZON_WEEKS, column=FORWARD_COLUMN):
+    """Kruskal-Wallis test of H0: what happens over the next `horizon` weeks (by default the change in net
+    position; pass column=FORWARD_RETURN_COLUMN for gold's return) has the same distribution in every regime.
+    Uses every horizon-th week so the forward windows don't overlap."""
+    sample = labelled.dropna(subset=[column]).iloc[::horizon]
+    groups = [g[column].to_numpy() for _, g in sample.groupby("regime") if len(g) > 1]
     if len(groups) < 2:
         raise ValueError("Need at least two regimes with forward data to test")
     statistic, p_value = kruskal(*groups)
     return {"statistic": float(statistic), "p_value": float(p_value), "weeks_tested": int(len(sample))}
+
+
+def feature_set_comparison(features, feature_sets, counts=config.CANDIDATE_CLUSTER_COUNTS, rounds=5):
+    """K-Means on each feature set, all on the same weeks (those with every feature), with
+    separation, repeatability and whether the groups differ in what speculators and gold did next."""
+    every_column = sorted({c for columns in feature_sets.values() for c in columns})
+    common = complete_rows(features, every_column)
+
+    def score(name, columns, k):
+        matrix = scale_features(common, columns)
+        labelled = common.assign(regime=kmeans_labels(matrix, k))
+        return {
+            "features": name,
+            "k": k,
+            "weeks": len(common),
+            "first_week": common["date"].min(),
+            "silhouette": silhouette_score(matrix, labelled["regime"]),
+            "stability": subsample_stability(kmeans_labels, matrix, k, rounds),
+            "p_positioning_next": forward_flow_test(labelled)["p_value"],
+            "p_gold_next": forward_flow_test(labelled, column=FORWARD_RETURN_COLUMN)["p_value"],
+        }
+
+    return pd.DataFrame([score(name, columns, k) for name, columns in feature_sets.items() for k in counts])

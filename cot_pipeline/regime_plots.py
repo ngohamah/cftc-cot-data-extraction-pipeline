@@ -6,7 +6,7 @@ Every function takes ready-made data and returns a matplotlib Figure (nothing is
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.ticker import PercentFormatter
+from matplotlib.ticker import NullFormatter, PercentFormatter, StrMethodFormatter
 from sklearn.metrics import silhouette_samples
 
 import config
@@ -355,10 +355,14 @@ def fingerprint_figure(labelled, profile):
     return fig
 
 
-def what_happens_next_figure(labelled, profile, test, horizon=config.FORWARD_HORIZON_WEEKS):
-    """The relationship: the regime today vs how speculators change their net position next."""
+def _p_text(test):
+    return "p < 0.001" if test["p_value"] < 0.001 else f"p = {test['p_value']:.2f}"
+
+
+def _outcome_figure(labelled, profile, column, share_column, text):
+    """Box plot of what followed each regime (left) and how often it was positive (right)."""
     names = profile["name"].tolist()
-    data = [labelled.loc[labelled["regime"] == r, "forward_net_flow"].dropna().to_numpy() for r in profile.index]
+    data = [labelled.loc[labelled["regime"] == r, column].dropna().to_numpy() for r in profile.index]
     with plt.rc_context(STYLE):
         fig, (box, bars) = plt.subplots(1, 2, figsize=(14, 6), gridspec_kw={"width_ratios": [1.6, 1]}, sharey=True)
         parts = box.boxplot(
@@ -376,42 +380,179 @@ def what_happens_next_figure(labelled, profile, test, horizon=config.FORWARD_HOR
         box.axvline(0, color=config.PLOT_INK_MUTED, linewidth=1)
         box.set_yticks(range(1, len(names) + 1), names)
         box.xaxis.set_major_formatter(PERCENT)
-        box.set_xlabel(f"Change in net position over the next {horizon} weeks (share of open interest)")
+        box.set_xlabel(text["box_xlabel"])
         box.set_title("Spread of what followed (box = middle half of weeks)")
-        box.annotate(
-            "speculators sold <-",
-            (0, 0.45),
-            xytext=(-6, 0),
-            textcoords="offset points",
-            ha="right",
-            fontsize=8.5,
-            color=config.PLOT_INK_MUTED,
-        )
-        box.annotate(
-            "-> speculators bought",
-            (0, 0.45),
-            xytext=(6, 0),
-            textcoords="offset points",
-            ha="left",
-            fontsize=8.5,
-            color=config.PLOT_INK_MUTED,
-        )
+        for label, offset, align in ((text["down"] + " <-", -6, "right"), ("-> " + text["up"], 6, "left")):
+            box.annotate(
+                label,
+                (0, 0.45),
+                xytext=(offset, 0),
+                textcoords="offset points",
+                ha=align,
+                fontsize=8.5,
+                color=config.PLOT_INK_MUTED,
+            )
 
-        shares = profile["share_added_next"].to_numpy()
+        shares = profile[share_column].to_numpy()
         bars.barh(range(1, len(names) + 1), shares, height=0.55, color=list(config.REGIME_COLORS))
         bars.axvline(0.5, color=config.PLOT_INK_MUTED, linewidth=1)
-        for y, share in enumerate(shares, start=1):
-            bars.text(share + 0.01, y, f"{share:.0%}", va="center", fontsize=10, color=config.PLOT_INK)
+        counts = profile[text["count_column"]].to_numpy() if "count_column" in text else [None] * len(shares)
+        for y, (share, count) in enumerate(zip(shares, counts, strict=True), start=1):
+            label = f"{share:.0%}" + (f"  ({count:.0f} weeks)" if count is not None else "")
+            bars.text(share + 0.01, y, label, va="center", fontsize=10, color=config.PLOT_INK)
         bars.set_xlim(0, 1)
         bars.xaxis.set_major_formatter(PERCENT)
-        bars.set_xlabel(f"Share of weeks where net position was higher {horizon} weeks later")
-        bars.set_title("How often speculators added (50% = coin flip)")
-        p_text = "p < 0.001" if test["p_value"] < 0.001 else f"p = {test['p_value']:.3f}"
+        bars.set_xlabel(text["bar_xlabel"])
+        bars.set_title(text["bar_title"])
+        _finish(fig, text["title"], text["subtitle"])
+    return fig
+
+
+def what_happens_next_figure(labelled, profile, test, horizon=config.FORWARD_HORIZON_WEEKS):
+    """The relationship: the regime today vs how speculators change their net position next."""
+    return _outcome_figure(
+        labelled,
+        profile,
+        "forward_net_flow",
+        "share_added_next",
+        {
+            "box_xlabel": f"Change in net position over the next {horizon} weeks (share of open interest)",
+            "down": "speculators sold",
+            "up": "speculators bought",
+            "bar_xlabel": f"Share of weeks where net position was higher {horizon} weeks later",
+            "bar_title": "How often speculators added (50% = coin flip)",
+            "title": "Positioning tends to revert: crowded longs get trimmed, net shorts get covered",
+            "subtitle": f"Kruskal-Wallis test on {test['weeks_tested']} non-overlapping {horizon}-week windows: "
+            f"regimes differ in what follows ({_p_text(test)}).",
+        },
+    )
+
+
+def gold_after_regime_figure(labelled, profile, test, horizon=config.FORWARD_HORIZON_WEEKS):
+    """The price question: the regime today vs gold's return over the following weeks."""
+    verdict = "differ" if test["p_value"] < 0.05 else "do not clearly differ"
+    return _outcome_figure(
+        labelled,
+        profile,
+        "forward_return",
+        "share_price_rose",
+        {
+            "box_xlabel": f"Gold's return over the {horizon} weeks after the report is published",
+            "down": "gold fell",
+            "up": "gold rose",
+            "bar_xlabel": f"Share of weeks where gold was higher {horizon} weeks later",
+            "bar_title": "How often gold rose (50% = coin flip)",
+            "count_column": "weeks_with_price",
+            "title": "The regimes do not forecast gold's price",
+            "subtitle": f"Gold's average return was positive after every regime, and the gaps between regimes could "
+            f"easily be luck (Kruskal-Wallis test on {test['weeks_tested']} non-overlapping windows: regimes "
+            f"{verdict}, {_p_text(test)}).",
+        },
+    )
+
+
+def lead_lag_figure(lead_lag):
+    """Do speculators move before or after the price? Correlation between their weekly change and gold's
+    weekly return, with gold's week shifted earlier or later."""
+    lags = lead_lag["lag_weeks"]
+    colors = [
+        config.SERIES_COLORS[1] if lag < 0 else config.PLOT_INK_MUTED if lag == 0 else config.SERIES_COLORS[0]
+        for lag in lags
+    ]
+    with plt.rc_context(STYLE):
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.bar(lags, lead_lag["correlation"], width=0.7, color=colors)
+        ax.axhline(0, color=config.PLOT_AXIS, linewidth=1)
+        top = max(lead_lag["correlation"].max(), 0.1)
+        for x, label in ((-4.5, "<- gold's week came first"), (4.5, "gold's week came after ->")):
+            ax.text(x, top * 1.08, label, ha="center", fontsize=9.5, color=config.PLOT_INK)
+        same_week = lead_lag.loc[lags == 0, "correlation"].iloc[0]
+        ax.annotate(
+            f"same week: {same_week:.2f}",
+            (0, same_week),
+            xytext=(0, 4),
+            textcoords="offset points",
+            ha="center",
+            fontsize=9.5,
+            color=config.PLOT_INK,
+        )
+        ax.set_ylim(min(-0.15, lead_lag["correlation"].min() - 0.05), top * 1.2)
+        ax.set_xticks(lags)
+        ax.set_xlabel("Weeks between speculators' weekly change and gold's weekly move (negative = gold moved first)")
+        ax.set_ylabel("Correlation (1 = always together, 0 = unrelated)")
         _finish(
             fig,
-            "Positioning tends to revert: crowded longs get trimmed, net shorts get covered",
-            f"Kruskal-Wallis test on {test['weeks_tested']} non-overlapping {horizon}-week windows: regimes differ "
-            f"in what follows ({p_text}).",
+            "Speculators move with the price in the same week; they don't move ahead of it",
+            "Weeks when gold rises are weeks when speculators buy (grey). Their buying says nothing about gold's "
+            "following weeks (blue bars near zero).",
+        )
+    return fig
+
+
+def price_timeline_figure(labelled, names=config.REGIME_NAMES):
+    """Gold's price with each week's regime, so regimes can be read against the familiar price chart."""
+    priced = labelled.dropna(subset=["close"])
+    with plt.rc_context(STYLE):
+        fig, ax = plt.subplots(figsize=(13, 6.5))
+        ax.plot(priced["date"], priced["close"], color=config.PLOT_AXIS, linewidth=0.8, zorder=1)
+        for regime, rows in priced.groupby("regime"):
+            ax.scatter(
+                rows["date"], rows["close"], s=12, linewidths=0, label=names[regime], zorder=2, **_regime_style(regime)
+            )
+        ax.set_yscale("log")
+        ax.yaxis.set_major_formatter(StrMethodFormatter("${x:,.0f}"))
+        ax.yaxis.set_minor_formatter(NullFormatter())
+        ax.set_yticks([250, 500, 1000, 2000, 4000])
+        ax.set_ylabel("Gold futures price, US$ per ounce (log scale)")
+        ax.set_xlabel("Report date")
+        ax.legend(loc="upper left", markerscale=2)
+        _finish(
+            fig,
+            "Regimes on the gold price chart",
+            "Crowded longs come with strong rallies and net-short spells with weak prices: positioning mirrors "
+            "the trend that has already happened.",
+        )
+    return fig
+
+
+def feature_set_figure(comparison, chosen_k=config.N_REGIMES):
+    """Positioning only vs adding price features: separation and whether groups predict what comes next."""
+    panels = [
+        ("silhouette", "1. How clearly separated are the groups?", "Silhouette score (higher = clearer)"),
+        ("p_positioning_next", "2. Do groups differ in what speculators do next?", "p-value (below line = yes)"),
+        ("p_gold_next", "3. Do groups differ in what gold does next?", "p-value (below line = yes)"),
+    ]
+    with plt.rc_context(STYLE):
+        fig, axes = plt.subplots(1, 3, figsize=(16, 5.8))
+        for ax, (metric, title, ylabel) in zip(axes, panels, strict=True):
+            for color, (name, rows) in zip(
+                config.SERIES_COLORS, comparison.groupby("features", sort=False), strict=False
+            ):
+                ax.plot(rows["k"], rows[metric], color=color, marker="o", markersize=5, label=name)
+            if metric != "silhouette":
+                ax.set_yscale("log")
+                ax.yaxis.set_major_formatter(StrMethodFormatter("{x:g}"))
+                ax.yaxis.set_minor_formatter(NullFormatter())
+                ax.set_yticks([0.001, 0.01, 0.05, 0.2, 1])
+                ax.axhline(0.05, color=config.PLOT_INK, linewidth=1)
+                ax.annotate(
+                    "0.05: convincing below this line",
+                    (comparison["k"].min(), 0.05),
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    fontsize=8.5,
+                    color=config.PLOT_INK,
+                )
+            ax.set_title(title)
+            ax.set_ylabel(ylabel)
+            ax.set_xlabel("Number of groups (k)")
+        axes[0].legend(loc="upper right")
+        _finish(
+            fig,
+            "Adding gold's price doesn't help: no version forecasts gold",
+            f"K-Means on the same {comparison['weeks'].iloc[0]} weeks "
+            f"({comparison['first_week'].iloc[0]:%Y} onwards) with three choices of inputs. Price-only groups are "
+            "cleaner but just sort price trends; positioning-only is kept.",
         )
     return fig
 
