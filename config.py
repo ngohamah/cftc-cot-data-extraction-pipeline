@@ -191,8 +191,25 @@ DBSCAN_EPS_VALUES = (0.3, 0.5, 0.8, 1.0, 1.5)
 DBSCAN_MIN_SAMPLES = 10
 N_REGIMES = 4  # chosen from the model-selection scorecard (see reports/gold_regimes.md)
 # names in order of each regime's average net position (most short -> most long)
-REGIME_NAMES = ("Speculators net short", "Low participation", "Moderate long", "Crowded long")
+# (named from the regime profiles: 88% of "Net short / 3-yr low" weeks are net short, the rest sit near
+# 3-year lows; "Long, off the highs" is net long but low in its 3-year range with more shorts active)
+REGIME_NAMES = ("Net short / 3-yr low", "Low participation", "Long, off the highs", "Crowded long")
 RANDOM_STATE = 0
 KMEANS_N_INIT = 10
 GMM_N_INIT = 5
 BOOTSTRAP_ROUNDS = 20
+
+# --- figure style (validated reference palette; 3 hues + neutral gray for the quiet regime) ------
+# colours follow REGIME_NAMES; each regime also gets its own marker so colour is never the only cue
+REGIME_COLORS = ("#eb6834", "#898781", "#1baf7a", "#2a78d6")
+REGIME_MARKERS = ("D", "o", "^", "s")
+SERIES_COLORS = ("#2a78d6", "#eb6834", "#1baf7a")  # model comparison lines, in fixed order
+DIVERGING_COLORS = ("#2a78d6", "#f0efec", "#e34948")  # below average <- typical -> above average
+SEQUENTIAL_COLORS = ("#f0efec", "#2a78d6", "#0d366b")
+PLOT_SURFACE = "#fcfcfb"
+PLOT_INK = "#0b0b0b"
+PLOT_INK_SECONDARY = "#52514e"
+PLOT_INK_MUTED = "#898781"
+PLOT_GRID = "#e1e0d9"
+PLOT_AXIS = "#c3c2b7"
+FIGURE_DPI = 150
