@@ -323,9 +323,10 @@ def render_report(result, figure_names):
         f"**{FIGURE_CAPTIONS.get(name, name)}**\n\n![{name}](figures/gold_regimes/{name})" for name in figure_names
     )
     price_bullet = (
-        f"- **They do not forecast gold's price.** Gold rose about as often after every regime (p-value "
-        f"{_p_text(result['price_test'])}): speculators *follow* the price rather than lead it. Adding price "
-        "data to the clustering made the groups blurrier, so the positioning-only regimes are kept.\n"
+        f"- **They do not forecast gold's price.** Gold's return after each regime differed by no more than luck "
+        f"could explain (p-value {_p_text(result['price_test'])}): speculators move *with* the price rather than "
+        "ahead of it. Adding price data to the clustering made the groups blurrier, so the positioning-only "
+        "regimes are kept.\n"
         if has_price
         else ""
     )
