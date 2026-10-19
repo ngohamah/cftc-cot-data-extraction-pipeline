@@ -172,8 +172,13 @@ Added 2026-10-20 (branch `feature/gold-regimes`). Exploratory analysis, not part
   `reports/gold_regimes.md`, `reports/gold_regimes_weekly.csv` and `reports/figures/gold_regimes/`.
 - Decisions: COMEX contract only (CBOT 100 oz / IMM rows dropped); regimes use the three slow "state"
   features only (adding flows lowered separation for every k); `N_REGIMES = 4` from the scorecard.
-- Next: run for other symbols (settings are in `config.py`), add prices to test regimes against returns,
-  and try a time-aware model (hidden Markov model) once a baseline is agreed.
+- Prices (added 2026-10-20): `cot_pipeline/prices.py` + `scripts/fetch_prices.py` download COMEX gold
+  futures (`GC=F`, yfinance 1.7; 0.2.x is rate-limited by Yahoo) once to `data/prices/`. Forward returns start
+  at the first close after the Friday release. Findings: regimes do not forecast gold's 8-week return
+  (Kruskal-Wallis p = 0.16); speculators move with the price in the same week (0.51) but not ahead of it;
+  adding price features to the clustering lowered separation, so the positioning-only regimes are kept.
+- Next: run for other symbols (settings are in `config.py`) and try a time-aware model (hidden Markov
+  model) once a baseline is agreed.
 
 ## References
 
