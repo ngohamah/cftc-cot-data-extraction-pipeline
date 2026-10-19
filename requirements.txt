@@ -5,6 +5,9 @@ pandas==2.2.2
 scikit-learn==1.5.1
 scipy==1.14.1
 matplotlib==3.9.2
+# daily gold prices from Yahoo Finance (versions before 1.0 are rate-limited by Yahoo)
+yfinance==1.7.0
+curl_cffi==0.16.3
 requests==2.32.3
 urllib3==2.8.0
 

@@ -199,6 +199,19 @@ KMEANS_N_INIT = 10
 GMM_N_INIT = 5
 BOOTSTRAP_ROUNDS = 20
 
+# --- daily prices (Yahoo Finance; downloaded once by scripts/fetch_prices.py, then read from disk) ----
+# COMEX gold futures (front month): the same contract the COT report covers; history from Aug 2000.
+# GLD (the gold ETF) moves almost identically (weekly-return correlation 0.98) but only starts in Nov 2004.
+PRICE_TICKER = "GC=F"
+PRICE_START = "2000-01-01"
+PRICE_DIR = DATA_DIR / "prices"
+PRICE_FILE = PRICE_DIR / "GOLD_GC=F.csv"
+PRICE_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
+PRICE_MATCH_TOLERANCE_DAYS = 5  # use the last close on or before the report date, at most this many days earlier
+PRICE_TREND_WEEKS = 13  # "recent trend": gold's return over the last quarter
+PRICE_FEATURES = ["price_pct_3y", "return_13w"]  # added to STATE_FEATURES for the "with price" model
+LEAD_LAG_WEEKS = 8  # how far back / ahead to compare speculator moves with price moves
+
 # --- figure style (validated reference palette; 3 hues + neutral gray for the quiet regime) ------
 # colours follow REGIME_NAMES; each regime also gets its own marker so colour is never the only cue
 REGIME_COLORS = ("#eb6834", "#898781", "#1baf7a", "#2a78d6")
