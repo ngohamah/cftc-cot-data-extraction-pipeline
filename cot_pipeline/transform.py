@@ -52,8 +52,25 @@ def is_oldest_first(dataframe):
 
 
 def has_duplicate_records(dataframe):
-    """True if any market + date pair appears more than once."""
-    return dataframe.duplicated(subset=KEY_COLUMNS).any()
+    """True if any week appears more than once.
+
+    A symbol's file holds one report per week. Two rows with the same date are duplicates even when
+    their market names differ (e.g. COMEX gold and CBOT 100 oz gold): the signal files have no market
+    column, and net position changes would be computed between two different contracts.
+    """
+    return dataframe.duplicated(subset=[config.DATE_COL]).any()
+
+
+def one_report_per_week(dataframe):
+    """Keep one contract per week: the one with the largest open interest (the symbol's main contract).
+
+    Several contracts of one symbol were reported in the same week in some periods (e.g. COMEX and CBOT
+    silver until 2007, NASDAQ-100 Consolidated and its stock index part in 2010-2015).
+    Returns (kept_rows, dropped_rows); row order is not preserved.
+    """
+    by_size = dataframe.sort_values(by=config.OPEN_INTEREST_COL, ascending=False, kind="stable", na_position="last")
+    is_main = ~by_size.duplicated(subset=[config.DATE_COL], keep="first")
+    return by_size[is_main], by_size[~is_main]
 
 
 def add_net_positions(dataframe):
@@ -64,34 +81,40 @@ def add_net_positions(dataframe):
 
 
 def merge_symbol_data(frames):
-    """Combine frames (oldest source first); later frames win on repeated reports.
+    """Combine frames (oldest source first) into one report per week; later frames win on repeated reports.
 
-    Returns (merged_frame, duplicate_row_count).
+    Returns (merged_frame, duplicate_row_count, other_contract_rows): duplicate_row_count counts repeated
+    reports of the same market and week; other_contract_rows are smaller contracts reported in a week
+    that already has the main contract (see one_report_per_week).
     """
     combined = pd.concat([f[config.SPECIAL_COLUMNS] for f in frames if f is not None], ignore_index=True)
     deduped = combined.drop_duplicates(subset=KEY_COLUMNS, keep="last")
-    return add_net_positions(deduped)[config.DATA_COLUMNS], len(combined) - len(deduped)
+    weekly, other_contracts = one_report_per_week(deduped)
+    return add_net_positions(weekly)[config.DATA_COLUMNS], len(combined) - len(deduped), other_contracts
 
 
 def split_incoming(existing, incoming):
-    """Split incoming rows against saved ones.
+    """Split incoming rows against saved ones, by week.
 
-    Returns (new_rows, revised_count): new_rows are reports not saved yet; revised_count is how
-    many already-saved reports arrived with different values (the CFTC occasionally corrects a week).
+    Returns (new_rows, revised_count): new_rows are weeks not saved yet (one report per week, oldest
+    first); revised_count is how many already-saved weeks arrived with different values or a different
+    main contract (the CFTC occasionally corrects a week).
     """
-    incoming = incoming[config.SPECIAL_COLUMNS].drop_duplicates(subset=KEY_COLUMNS, keep="last")
-    saved = existing[config.SPECIAL_COLUMNS].drop_duplicates(subset=KEY_COLUMNS, keep="last")
-    joined = incoming.merge(saved, on=KEY_COLUMNS, how="left", suffixes=("", "_saved"), indicator=True)
+    deduped = incoming[config.SPECIAL_COLUMNS].drop_duplicates(subset=KEY_COLUMNS, keep="last")
+    weekly = sort_oldest_first(one_report_per_week(deduped)[0])
+    saved = existing[config.SPECIAL_COLUMNS].drop_duplicates(subset=[config.DATE_COL], keep="last")
+    joined = weekly.merge(saved, on=config.DATE_COL, how="left", suffixes=("", "_saved"), indicator=True)
     is_new = (joined["_merge"] == "left_only").to_numpy()
     matched = joined[~is_new]
+    compared = [config.MARKET_COL, *config.NUMERIC_COLUMNS]
     differs = pd.concat(
         [
             ~((matched[c] == matched[f"{c}_saved"]) | (matched[c].isna() & matched[f"{c}_saved"].isna()))
-            for c in config.NUMERIC_COLUMNS
+            for c in compared
         ],
         axis=1,
     ).any(axis=1)
-    return incoming[is_new].reset_index(drop=True), int(differs.sum())
+    return weekly[is_new].reset_index(drop=True), int(differs.sum())
 
 
 def extend_with_net_positions(existing, new_rows):
@@ -112,12 +135,17 @@ def history_to_backfill(existing, history_rows):
     return history_rows[history_rows[config.DATE_COL] < earliest]
 
 
-def rewrite_reason(saved_columns, existing, new_rows):
-    """Why a saved file can't simply be appended to, or None if appending is safe."""
-    if list(saved_columns) != config.DATA_COLUMNS:
+def rewrite_reason(saved, existing, new_rows):
+    """Why a saved file can't simply be appended to, or None if appending is safe.
+
+    saved is the file as read from disk; existing is the same rows after clean_report.
+    """
+    if list(saved.columns) != config.DATA_COLUMNS:
         return "column layout differs from the expected one"
+    if len(existing) != len(saved):
+        return f"file contains {len(saved) - len(existing)} rows with unknown markets or unreadable dates"
     if has_duplicate_records(existing):
-        return "file contains duplicate records"
+        return "file contains more than one record for the same week"
     if not is_oldest_first(existing):
         return "converting to oldest-first order"
     if len(new_rows) and new_rows[config.DATE_COL].min() <= existing[config.DATE_COL].max():

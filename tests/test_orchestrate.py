@@ -1,11 +1,20 @@
 import logging
 
 import pandas as pd
-from helpers import PESO, report, zip_bytes
+from helpers import GOLD, PESO, report, zip_bytes
 
 import config
 from cot_pipeline.extract import raw_zip_path
-from cot_pipeline.orchestrate import APPENDED, CREATED, REWRITTEN, UNCHANGED, run, update_signals, update_symbol
+from cot_pipeline.orchestrate import (
+    APPENDED,
+    CREATED,
+    REWRITTEN,
+    UNCHANGED,
+    run,
+    update_signals,
+    update_symbol,
+    validation_problems,
+)
 from cot_pipeline.transform import clean_report, merge_symbol_data
 
 WEEKS = [(PESO, "2024-01-02", 10, 5, 2), (PESO, "2024-01-09", 30, 5, 2)]
@@ -128,3 +137,53 @@ def test_update_symbol_does_not_rewrite_when_history_has_nothing_older(tmp_path)
     update_symbol("BITCOIN", cleaned(rows), tmp_path, lambda: None)
     history = cleaned([(PESO, "2016-12-27", 1, 1, 0)])  # other markets only
     assert update_symbol("BITCOIN", cleaned(rows), tmp_path, lambda: history).mode == UNCHANGED
+
+
+GOLD_CBOT = "GOLD, 100 TROY OZ - CHICAGO BOARD OF TRADE"
+
+
+def test_update_symbol_rewrites_file_with_two_contracts_per_week_once(tmp_path, caplog):
+    """A saved file holding two contracts in one week is rewritten with one record per week, then appended to."""
+    saved = report([(GOLD, "2008-07-15", 10, 5, 0), (GOLD_CBOT, "2008-07-15", 1, 1, 0)])
+    saved = saved.assign(**{config.OPEN_INTEREST_COL: [500, 50]}, **{config.NET_COL: 0, config.NET_CHANGE_COL: 0})
+    saved.to_csv(tmp_path / "GOLD.csv", index=False)
+    with caplog.at_level(logging.INFO):
+        first = update_symbol("GOLD", cleaned([]), tmp_path, lambda: None)
+    assert first.mode == REWRITTEN
+    assert "same week" in caplog.text and f"1 weeks of {GOLD_CBOT}" in caplog.text
+    on_disk = pd.read_csv(tmp_path / "GOLD.csv")
+    assert on_disk[config.MARKET_COL].tolist() == [GOLD]
+    assert update_symbol("GOLD", cleaned([(GOLD, "2008-07-22", 1, 1, 0)]), tmp_path, lambda: None).mode == APPENDED
+
+
+def test_update_symbol_rewrites_file_with_rows_the_cleaner_drops(tmp_path, caplog):
+    """Rows with unknown markets or bad dates are removed (and logged) instead of being left in the file."""
+    good = merge_symbol_data([cleaned(WEEKS)])[0]
+    junk = good.iloc[[0]].assign(**{config.MARKET_COL: "SOMETHING ELSE - NOWHERE"})
+    pd.concat([good, junk]).to_csv(tmp_path / "MEXICAN PESO.csv", index=False)
+    with caplog.at_level(logging.WARNING):
+        update = update_symbol("MEXICAN PESO", cleaned(WEEKS), tmp_path, lambda: None)
+    assert update.mode == REWRITTEN
+    assert "1 rows with unknown markets" in caplog.text
+    assert len(pd.read_csv(tmp_path / "MEXICAN PESO.csv")) == 2
+
+
+def test_validation_problems():
+    """Valid data passes; repeated or out-of-order weeks are reported."""
+    data = merge_symbol_data([cleaned(WEEKS)])[0]
+    assert validation_problems(data) == []
+    assert "same week" in validation_problems(pd.concat([data, data.iloc[[-1]]]))[0]
+    assert "oldest-first" in validation_problems(data.iloc[::-1])[0]
+
+
+def test_run_writes_one_signal_per_week_when_contracts_overlap(tmp_path):
+    """Two gold contracts in one week give one signal row for that week, not two."""
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    rows = report([(GOLD, "2024-01-02", 10, 5, 2), (GOLD_CBOT, "2024-01-02", 1, 1, 2), (GOLD, "2024-01-09", 30, 5, 2)])
+    rows = rows.assign(**{config.OPEN_INTEREST_COL: [500, 50, 520]})
+    raw_zip_path(2024, raw).write_bytes(zip_bytes(rows))
+    run([2024], tmp_path / "data", tmp_path / "signal", raw, tmp_path / "reports", offline=True)
+    signals = pd.read_csv(tmp_path / "signal" / "GOLD.csv")
+    assert signals[config.DATE_COL].tolist() == ["2024-01-02", "2024-01-09"]
+    assert signals["Interpretation"].tolist() == ["No signal", "Bullish"]
