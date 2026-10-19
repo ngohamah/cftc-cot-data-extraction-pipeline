@@ -26,7 +26,9 @@ from cot_pipeline.transform import (
     add_net_positions,
     clean_report,
     extend_with_net_positions,
+    has_duplicate_records,
     history_to_backfill,
+    is_oldest_first,
     may_lack_history,
     merge_symbol_data,
     rewrite_reason,
@@ -49,6 +51,30 @@ class SymbolUpdate:
     new_count: int  # records this run added that weren't saved before
 
 
+def log_merge_drops(symbol, duplicates, other_contracts):
+    """Log rows merge_symbol_data dropped: repeated reports, and smaller contracts per market name."""
+    if duplicates:
+        logger.info("%s: dropped %d duplicate rows (same market and date)", symbol, duplicates)
+    for market, count in other_contracts[config.MARKET_COL].value_counts().items():
+        logger.info(
+            "%s: dropped %d weeks of %s - a larger contract of %s was reported the same week (one report per week)",
+            symbol,
+            count,
+            market,
+            symbol,
+        )
+
+
+def validation_problems(data):
+    """Reasons data can't be saved as a symbol's history (empty list if it is valid)."""
+    checks = [
+        (has_duplicate_records(data), "more than one record for the same week"),
+        (not is_oldest_first(data), "weeks are not in oldest-first order"),
+        (data[config.DATE_COL].isna().any(), "records without a report date"),
+    ]
+    return [reason for failed, reason in checks if failed]
+
+
 def create_symbol_file(symbol, path, incoming, get_history, rebuild):
     """Write data/<symbol>.csv from scratch: 1986-2016 history (if available) followed by the new reports.
 
@@ -63,9 +89,8 @@ def create_symbol_file(symbol, path, incoming, get_history, rebuild):
     if all(s is None or s.empty for s in sources):
         logger.warning("No data at all for %s - %s not written", symbol, path)
         return None
-    merged, duplicates = merge_symbol_data(sources)
-    if duplicates:
-        logger.info("%s: dropped %d duplicate rows (same market and date)", symbol, duplicates)
+    merged, duplicates, other_contracts = merge_symbol_data(sources)
+    log_merge_drops(symbol, duplicates, other_contracts)
     write_csv(merged, path)
     logger.info("%s: %s %s with %d records", symbol, "rebuilt" if rebuild else "created", path, len(merged))
     return SymbolUpdate(merged, merged, CREATED, len(merged))
@@ -92,7 +117,15 @@ def update_symbol(symbol, new_rows, data_dir, get_history, rebuild=False):
     if saved is None:
         return create_symbol_file(symbol, path, incoming, get_history, rebuild)
 
-    existing = clean_report(saved)[0]
+    existing, unreadable = clean_report(saved)
+    if len(existing) < len(saved):
+        logger.warning(
+            "%s: %s has %d rows with unknown markets and %d with unreadable dates - they will be removed",
+            symbol,
+            path,
+            len(saved) - len(existing) - unreadable,
+            unreadable,
+        )
     fresh, revised = split_incoming(existing, incoming)
     if revised:
         logger.warning(
@@ -102,22 +135,24 @@ def update_symbol(symbol, new_rows, data_dir, get_history, rebuild=False):
         )
 
     backfill = missing_history(symbol, existing, get_history)
-    reason = rewrite_reason(saved.columns, existing, fresh)
+    reason = rewrite_reason(saved, existing, fresh)
     if len(backfill):
         history_note = f"adding {len(backfill)} older records from {config.HISTORICAL_FILENAME}"
         reason = f"{history_note}; {reason}" if reason else history_note
     if reason:
-        merged, duplicates = merge_symbol_data([backfill, existing, fresh])
+        merged, duplicates, other_contracts = merge_symbol_data([backfill, existing, fresh])
+        log_merge_drops(symbol, duplicates, other_contracts)
         write_csv(merged, path)
-        added = len(merged) - len(existing)
+        kept = int(merged[config.DATE_COL].isin(existing[config.DATE_COL]).sum())
+        added = len(merged) - kept
         logger.info(
-            "%s: rewrote %s in full (%s): %d records, %d added, %d duplicates dropped",
+            "%s: rewrote %s in full (%s): %d records, %d added, %d saved rows removed",
             symbol,
             path,
             reason,
             len(merged),
             added,
-            duplicates,
+            len(saved) - kept,
         )
         return SymbolUpdate(merged, merged, REWRITTEN, added)
 
@@ -213,6 +248,11 @@ def run(years, data_dir, signal_dir, raw_dir, report_dir, refresh=False, rebuild
             update = update_symbol(symbol, new_rows, data_dir, get_history, rebuild)
             if update is None:
                 problems.append(f"No data found for {symbol}; no files written.")
+                continue
+            invalid = validation_problems(update.data)
+            if invalid:
+                logger.error("%s: data failed validation (%s) - signals not updated", symbol, "; ".join(invalid))
+                problems.append(f"{symbol} data failed validation ({'; '.join(invalid)}); signals not updated.")
                 continue
             update_signals(symbol, update, signal_dir)
             new_records += update.new_count

@@ -6,7 +6,9 @@ import config
 from cot_pipeline.transform import (
     clean_report,
     extend_with_net_positions,
+    has_duplicate_records,
     merge_symbol_data,
+    one_report_per_week,
     rewrite_reason,
     rows_for_symbol,
     split_incoming,
@@ -52,8 +54,8 @@ def test_merge_symbol_data_dedups_and_computes_net_positions_oldest_first():
     """Merging keeps the newest copy of repeated weeks, sorts oldest-first and computes net positions."""
     old = report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])
     new = report([(PESO, "2024-01-09", 30, 5, 0), (PESO, "2024-01-16", 25, 5, 0)])
-    merged, duplicates = merge_symbol_data([None, old, new])
-    assert duplicates == 1
+    merged, duplicates, other_contracts = merge_symbol_data([None, old, new])
+    assert duplicates == 1 and other_contracts.empty
     assert merged[config.DATE_COL].tolist() == ["2024-01-02", "2024-01-09", "2024-01-16"]
     assert merged[config.NET_COL].tolist() == [5, 25, 20]  # newer report wins for 2024-01-09
     assert pd.isna(merged[config.NET_CHANGE_COL].iloc[0])
@@ -85,14 +87,70 @@ def test_rewrite_reason():
     saved = merge_symbol_data([report([(PESO, "2024-01-02", 10, 5, 0), (PESO, "2024-01-09", 20, 5, 0)])])[0]
     later = report([(PESO, "2024-01-16", 1, 1, 0)])
     earlier = report([(PESO, "2023-12-26", 1, 1, 0)])
-    assert rewrite_reason(saved.columns, saved, later) is None
-    assert "older" in rewrite_reason(saved.columns, saved, earlier)
-    assert "oldest-first" in rewrite_reason(saved.columns, saved.iloc[::-1], later)
-    assert "column layout" in rewrite_reason(saved.columns[:-1], saved, later)
-    assert "duplicate" in rewrite_reason(saved.columns, pd.concat([saved, saved.iloc[[-1]]]), later)
+    assert rewrite_reason(saved, saved, later) is None
+    assert "older" in rewrite_reason(saved, saved, earlier)
+    assert "oldest-first" in rewrite_reason(saved, saved.iloc[::-1], later)
+    assert "column layout" in rewrite_reason(saved.iloc[:, :-1], saved, later)
+    doubled = pd.concat([saved, saved.iloc[[-1]]])
+    assert "same week" in rewrite_reason(doubled, doubled, later)
+    assert "unknown markets or unreadable dates" in rewrite_reason(saved, saved.iloc[1:], later)
 
 
 def test_rows_for_symbol_matches_all_name_variants():
     """Only rows whose market name contains the symbol are selected."""
     frame = report([(PESO, "2024-01-02", 1, 1, 1), (GOLD, "2024-01-02", 1, 1, 1)])
     assert rows_for_symbol(frame, "GOLD")[config.MARKET_COL].tolist() == [GOLD]
+
+
+GOLD_CBOT = "GOLD, 100 TROY OZ - CHICAGO BOARD OF TRADE"
+
+
+def gold_weeks(rows):
+    """Report rows from (market, date, long, short, open_interest) tuples."""
+    frame = report([(market, date, long, short, 0) for market, date, long, short, _ in rows])
+    return frame.assign(**{config.OPEN_INTEREST_COL: [oi for *_, oi in rows]})
+
+
+def test_has_duplicate_records_flags_two_contracts_in_the_same_week():
+    """Two market names with the same date are one week reported twice."""
+    frame = gold_weeks([(GOLD, "2008-07-15", 10, 5, 500), (GOLD_CBOT, "2008-07-15", 1, 1, 50)])
+    assert has_duplicate_records(frame)
+    assert not has_duplicate_records(frame.iloc[[0]])
+
+
+def test_one_report_per_week_keeps_the_largest_contract():
+    """The contract with the largest open interest is kept; the others are returned as dropped."""
+    frame = gold_weeks(
+        [
+            (GOLD_CBOT, "2008-07-15", 1, 1, 50),
+            (GOLD, "2008-07-15", 10, 5, 500),
+            (GOLD, "2008-07-22", 12, 5, 520),
+        ]
+    )
+    kept, dropped = one_report_per_week(frame)
+    assert sorted(kept[config.DATE_COL]) == ["2008-07-15", "2008-07-22"]
+    assert set(kept[config.MARKET_COL]) == {GOLD}
+    assert dropped[config.MARKET_COL].tolist() == [GOLD_CBOT]
+
+
+def test_merge_symbol_data_net_change_never_mixes_contracts():
+    """Net position changes are computed week to week within the main contract only."""
+    frame = gold_weeks(
+        [
+            (GOLD, "2008-07-15", 10, 5, 500),
+            (GOLD_CBOT, "2008-07-22", 100, 1, 50),
+            (GOLD, "2008-07-22", 12, 5, 520),
+        ]
+    )
+    merged, duplicates, other_contracts = merge_symbol_data([frame])
+    assert duplicates == 0 and len(other_contracts) == 1
+    assert merged[config.DATE_COL].tolist() == ["2008-07-15", "2008-07-22"]
+    assert merged[config.NET_CHANGE_COL].tolist()[1] == 2  # 7 - 5, not 99 - 5
+
+
+def test_split_incoming_returns_one_report_per_new_week():
+    """New weeks reported by several contracts come back once, from the main contract."""
+    saved = gold_weeks([(GOLD, "2008-07-08", 10, 5, 500)])
+    incoming = gold_weeks([(GOLD, "2008-07-15", 10, 5, 500), (GOLD_CBOT, "2008-07-15", 1, 1, 50)])
+    new_rows, revised = split_incoming(saved, incoming)
+    assert new_rows[config.MARKET_COL].tolist() == [GOLD] and revised == 0

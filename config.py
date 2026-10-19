@@ -37,6 +37,7 @@ MARKET_COL = "Market and Exchange Names"
 DATE_COL = "As of Date in Form YYYY-MM-DD"
 LONG_COL = "Noncommercial Positions-Long (All)"
 SHORT_COL = "Noncommercial Positions-Short (All)"
+OPEN_INTEREST_COL = "Open Interest (All)"
 OPEN_INTEREST_CHANGE_COL = "Change in Open Interest (All)"
 NET_COL = "Net Positions"
 NET_CHANGE_COL = "Change Net Positions"
@@ -49,7 +50,7 @@ SPECIAL_COLUMNS = [
     SHORT_COL,
     "Change in Noncommercial-Long (All)",
     "Change in Noncommercial-Short (All)",
-    "Open Interest (All)",
+    OPEN_INTEREST_COL,
     OPEN_INTEREST_CHANGE_COL,
 ]
 NUMERIC_COLUMNS = SPECIAL_COLUMNS[2:]
