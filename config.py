@@ -151,3 +151,48 @@ SIGNAL_BULLISH = (1, "Bullish")
 SIGNAL_BEARISH = (2, "Bearish")
 SIGNAL_BEARISH_REVERSAL = (3, "Bearish Reversal")
 SIGNAL_BULLISH_REVERSAL = (4, "Bullish Reversal")
+
+# --- positioning regimes (unsupervised clustering, scripts/gold_regimes.py) ---------------------
+REGIME_SYMBOL = "GOLD"
+# the main COMEX contract; the small CBOT 100 oz and IMM gold contracts would read as false extremes
+REGIME_MARKET = "GOLD - COMMODITY EXCHANGE INC."
+REGIME_REPORT_FILE = REPORT_DIR / "gold_regimes.md"
+REGIME_FIGURE_DIR = REPORT_DIR / "figures" / "gold_regimes"
+REGIME_LOG_FILE = PROJECT_ROOT / "logs" / "regimes.log"
+
+# short names used by the analysis notebook (gold_df) and the regime code
+ANALYSIS_COLUMN_NAMES = {
+    MARKET_COL: "market",
+    DATE_COL: "date",
+    LONG_COL: "long",
+    SHORT_COL: "short",
+    "Change in Noncommercial-Long (All)": "change_long",
+    "Change in Noncommercial-Short (All)": "change_short",
+    "Open Interest (All)": "open_interest",
+    OPEN_INTEREST_CHANGE_COL: "change_open_interest",
+    NET_COL: "net_positions",
+    NET_CHANGE_COL: "change_net_positions",
+}
+
+# COT index: where this week's net position sits between its min (0) and max (1) of the last 3 years
+COT_INDEX_WINDOW_WEEKS = 156
+COT_INDEX_MIN_WEEKS = 52
+FLOW_WINDOW_WEEKS = 4  # smoothing window for the (noisy) weekly flow features
+FORWARD_HORIZON_WEEKS = 8  # "what happens next": change in net position over the following weeks
+CLIP_QUANTILES = (0.01, 0.99)  # tame extreme weeks before scaling
+
+# slow-moving "where speculators stand" features: these define the regimes
+STATE_FEATURES = ["long_share", "short_share", "cot_index"]
+# fast "what they did lately" features: compared during model selection, not used for the regimes
+FLOW_FEATURES = ["net_flow_4w", "oi_growth_4w"]
+
+CANDIDATE_CLUSTER_COUNTS = (2, 3, 4, 5, 6, 7)
+DBSCAN_EPS_VALUES = (0.3, 0.5, 0.8, 1.0, 1.5)
+DBSCAN_MIN_SAMPLES = 10
+N_REGIMES = 4  # chosen from the model-selection scorecard (see reports/gold_regimes.md)
+# names in order of each regime's average net position (most short -> most long)
+REGIME_NAMES = ("Speculators net short", "Low participation", "Moderate long", "Crowded long")
+RANDOM_STATE = 0
+KMEANS_N_INIT = 10
+GMM_N_INIT = 5
+BOOTSTRAP_ROUNDS = 20
