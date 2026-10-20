@@ -149,6 +149,7 @@ stage:
 | `cot_pipeline/parity.py` | Compares the history file with per-year CFTC files (used by `scripts/verify_history_parity.py`) |
 | `cot_pipeline/regimes.py` | Positioning regimes: scale-free features, model comparison, K-Means regimes (used by `scripts/gold_regimes.py`) |
 | `cot_pipeline/regime_plots.py` | Figures for the regime analysis |
+| `cot_pipeline/big_moves.py` | Which report-day clues warn of a big price move, and whether any hint at its direction |
 | `cot_pipeline/prices.py` | Downloads daily prices once and lines them up with report dates (no look-ahead) |
 
 The original notebook is in `docs/`.

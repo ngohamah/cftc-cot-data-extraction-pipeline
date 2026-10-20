@@ -177,6 +177,9 @@ Added 2026-10-20 (branch `feature/gold-regimes`). Exploratory analysis, not part
   at the first close after the Friday release. Findings: regimes do not forecast gold's 8-week return
   (Kruskal-Wallis p = 0.16); speculators move with the price in the same week (0.51) but not ahead of it;
   adding price features to the clustering lowered separation, so the positioning-only regimes are kept.
+- Big moves (added 2026-10-20): `cot_pipeline/big_moves.py` tests which report-day clues raise the chance of a
+  big 4-week gold move (largest 20%, ~5.6%). Only gold's own 13-week volatility is reliable (14% -> 26%,
+  p < 0.001); no COT clue is, and nothing predicts the direction.
 - Next: run for other symbols (settings are in `config.py`) and try a time-aware model (hidden Markov
   model) once a baseline is agreed.
 
