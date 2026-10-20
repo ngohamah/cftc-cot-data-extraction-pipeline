@@ -80,7 +80,7 @@ def read_saved_prices(path=config.PRICE_FILE):
     return prices
 
 
-def _close_on_or_after(daily, dates, max_days=7):
+def close_on_or_after(daily, dates, max_days=7):
     """First close on or after each date (NaN if none within max_days, e.g. beyond the last saved day)."""
     targets = pd.DataFrame({"target": pd.to_datetime(dates).to_numpy()}).reset_index()
     found = pd.merge_asof(
@@ -122,8 +122,8 @@ def add_price_features(features, prices, settings=None):
     close = merged["close"]
     rolling = close.rolling(s["window"], min_periods=s["min_weeks"])
     entry_dates = merged["date"] + pd.Timedelta(days=s["release_days"] + 1)
-    entry = _close_on_or_after(daily, entry_dates)
-    exit_ = _close_on_or_after(daily, entry_dates + pd.Timedelta(weeks=s["horizon"]))
+    entry = close_on_or_after(daily, entry_dates)
+    exit_ = close_on_or_after(daily, entry_dates + pd.Timedelta(weeks=s["horizon"]))
     unmatched = close.isna().sum()
     if unmatched:
         logger.info(

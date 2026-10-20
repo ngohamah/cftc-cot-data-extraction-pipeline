@@ -212,6 +212,12 @@ PRICE_TREND_WEEKS = 13  # "recent trend": gold's return over the last quarter
 PRICE_FEATURES = ["price_pct_3y", "return_13w"]  # added to STATE_FEATURES for the "with price" model
 LEAD_LAG_WEEKS = 8  # how far back / ahead to compare speculator moves with price moves
 
+# "big moves": gold's move over the weeks after a report is published, ranked by size (up or down)
+BIG_MOVE_WEEKS = 4
+BIG_MOVE_QUANTILE = 0.8  # the largest 20% of moves count as "big"
+VOLATILITY_WEEKS = 13  # how jumpy gold has been: spread of its weekly moves over the last quarter
+CLUE_GROUPS = 5  # split each clue into fifths (calmest 20% ... jumpiest 20%)
+
 # --- figure style (validated reference palette; 3 hues + neutral gray for the quiet regime) ------
 # colours follow REGIME_NAMES; each regime also gets its own marker so colour is never the only cue
 REGIME_COLORS = ("#eb6834", "#898781", "#1baf7a", "#2a78d6")
