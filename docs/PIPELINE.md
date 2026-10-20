@@ -162,6 +162,28 @@ option and keeps the CSVs versioned in git history.
    same signal values), the notebook becomes exploratory/analysis-only — it should
    no longer be the thing that produces `data/` and `signal/`.
 
+## 6. Analysis: positioning regimes (unsupervised, gold first)
+
+Added 2026-10-20 (branch `feature/gold-regimes`). Exploratory analysis, not part of the weekly run.
+
+- `cot_pipeline/regimes.py`: scale-free features (long/short/net as a share of open interest, 3-year
+  percentile of net, 4-week flows), a model scorecard (K-Means, Gaussian mixture, Ward, DBSCAN), K-Means
+  regimes ordered by net position, regime profiles, transitions and a Kruskal-Wallis test of what follows.
+- `cot_pipeline/regime_plots.py`: the eight figures; `scripts/gold_regimes.py` writes
+  `reports/gold_regimes.md`, `reports/gold_regimes_weekly.csv` and `reports/figures/gold_regimes/`.
+- Decisions: COMEX contract only (CBOT 100 oz / IMM rows dropped); regimes use the three slow "state"
+  features only (adding flows lowered separation for every k); `N_REGIMES = 4` from the scorecard.
+- Prices (added 2026-10-20): `cot_pipeline/prices.py` + `scripts/fetch_prices.py` download COMEX gold
+  futures (`GC=F`, yfinance 1.7; 0.2.x is rate-limited by Yahoo) once to `data/prices/`. Forward returns start
+  at the first close after the Friday release. Findings: regimes do not forecast gold's 8-week return
+  (Kruskal-Wallis p = 0.16); speculators move with the price in the same week (0.51) but not ahead of it;
+  adding price features to the clustering lowered separation, so the positioning-only regimes are kept.
+- Big moves (added 2026-10-20): `cot_pipeline/big_moves.py` tests which report-day clues raise the chance of a
+  big 4-week gold move (largest 20%, ~5.6%). Only gold's own 13-week volatility is reliable (14% -> 26%,
+  p < 0.001); no COT clue is, and nothing predicts the direction.
+- Next: run for other symbols (settings are in `config.py`) and try a time-aware model (hidden Markov
+  model) once a baseline is agreed.
+
 ## References
 
 - [COT_Reports package by NDelventhal](https://github.com/NDelventhal/cot_reports)

@@ -70,6 +70,13 @@ pytest
 # verify raw/FUT86_16.txt matches the CFTC's own 1986-2016 yearly files (downloads each year once)
 python scripts/verify_history_parity.py
 
+# download daily gold prices once (saved to data/prices/; re-download with --refresh)
+python scripts/fetch_prices.py
+
+# find gold positioning regimes with unsupervised clustering and check them against the price
+# (report + figures in reports/)
+python scripts/gold_regimes.py
+
 # optional: explore the data in the notebook (ensure you have jupyter installed)
 jupyter lab
 ```
@@ -118,8 +125,9 @@ shorts, open interest, net positions, reading.
 | Folder | What is in it |
 |---|---|
 | `data/` | One CSV per market: weekly positions of large speculators, open interest, net positions and their weekly change (oldest week first) |
+| `data/prices/` | Daily gold futures prices from Yahoo Finance (`GC=F`), saved once by `scripts/fetch_prices.py` |
 | `signal/` | One CSV per market: the same weeks with the signal reading (Bullish, Bearish, ...) |
-| `reports/` | `latest_signals.md` - latest week per market in plain language; `history_parity.md` - result of the history check |
+| `reports/` | `latest_signals.md` - latest week per market in plain language; `history_parity.md` - result of the history check; `gold_regimes.md` - gold positioning regimes with figures in `figures/gold_regimes/` |
 | `raw/` | Source data: `FUT86_16.txt` (1986-2016) and `legacy_fut_<year>.zip` (2017 on); not stored in git |
 | `logs/` | `pipeline.log` - what your local runs did (not stored in git); `ci/pipeline.log` - what the weekly bot did, committed by the bot, each run starting with a link to its GitHub Actions run |
 
@@ -139,6 +147,10 @@ stage:
 | `cot_pipeline/orchestrate.py` | Runs the stages in order for every market |
 | `cot_pipeline/logging_setup.py` | Logging to `logs/pipeline.log` and the console |
 | `cot_pipeline/parity.py` | Compares the history file with per-year CFTC files (used by `scripts/verify_history_parity.py`) |
+| `cot_pipeline/regimes.py` | Positioning regimes: scale-free features, model comparison, K-Means regimes (used by `scripts/gold_regimes.py`) |
+| `cot_pipeline/regime_plots.py` | Figures for the regime analysis |
+| `cot_pipeline/big_moves.py` | Which report-day clues warn of a big price move, and whether any hint at its direction |
+| `cot_pipeline/prices.py` | Downloads daily prices once and lines them up with report dates (no look-ahead) |
 
 The original notebook is in `docs/`.
 
