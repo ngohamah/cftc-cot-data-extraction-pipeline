@@ -169,8 +169,10 @@ def test_script_adds_price_figures_and_section_when_prices_are_saved():
     script = load_script()
     result = script.analyse(synthetic_gold(), prices=daily_prices(), rounds=2)
     figures = script.build_figures(result)
-    assert len(figures) == 12
+    assert len(figures) == 13
     report = script.render_report(result, [name for name, _ in figures])
-    assert "## Gold price" in report and "## Further reading" in report and "## Words used" in report
+    assert (
+        "## Gold price" in report and "## Can we see a big price move coming?" in report and "## Words used" in report
+    )
     for _, figure in figures:
         plt.close(figure)

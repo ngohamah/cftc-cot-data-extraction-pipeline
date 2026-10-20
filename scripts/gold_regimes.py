@@ -27,9 +27,12 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 import config  # noqa: E402
+from cot_pipeline import (
+    big_moves,  # noqa: E402
+    regimes,  # noqa: E402
+)
 from cot_pipeline import prices as price_data  # noqa: E402
 from cot_pipeline import regime_plots as plots  # noqa: E402
-from cot_pipeline import regimes  # noqa: E402
 from cot_pipeline.logging_setup import LOGGER_NAME, configure_logging  # noqa: E402
 from cot_pipeline.storage import write_csv, write_text  # noqa: E402
 
@@ -88,6 +91,10 @@ GLOSSARY = """## Words used in this report
   whether the differences could easily be luck. It compares rankings, so a few extreme weeks can't dominate.
 - **p-value**: roughly, how likely differences this big would be if there were really no difference.
   Small (below 0.05, i.e. 5%) = probably a real difference; large = could easily be luck.
+- **Big move**: gold rising or falling by more than a set size (here the largest 20% of 4-week moves) in the
+  weeks after a report is published, whichever the direction.
+- **Volatility ("jumpiness")**: how much gold's weekly price changes have been swinging recently; a calm market
+  has small weekly changes, a jumpy one large ones.
 - **Correlation**: how closely two things move together, from -1 (always opposite) through 0 (unrelated) to 1
   (always together).
 """
@@ -164,8 +171,27 @@ def analyse(raw, prices=None, rounds=config.BOOTSTRAP_ROUNDS):
     if prices is None:
         return result
     logger.info("Comparing feature sets with and without gold price features")
+    moves, threshold = big_moves.add_move_columns(labelled, prices)
+    moves = big_moves.usable_weeks(moves)
+    direction, share_up, big_count = big_moves.direction_summary(moves)
+    logger.info(
+        "Big-move check on %d weeks (big = %.1f%% or more in %d weeks)",
+        len(moves),
+        threshold * 100,
+        config.BIG_MOVE_WEEKS,
+    )
     return {
         **result,
+        "big_moves": {
+            "threshold": threshold,
+            "base_rate": float(moves[big_moves.BIG_COLUMN].mean()),
+            "summary": big_moves.clue_summary(moves),
+            "volatility": big_moves.clue_table(moves, big_moves.CLUES[big_moves.VOLATILITY_CLUE](moves)),
+            "positioning": big_moves.clue_table(moves, moves["cot_index"]),
+            "direction": direction,
+            "share_up": share_up,
+            "big_count": big_count,
+        },
         "price_test": regimes.forward_flow_test(labelled, column=regimes.FORWARD_RETURN_COLUMN),
         "lead_lag": price_data.lead_lag_correlations(features),
         "feature_sets": regimes.feature_set_comparison(features, FEATURE_SETS, rounds=max(2, rounds // 4)),
@@ -197,6 +223,16 @@ def build_figures(result):
         ("10_speculators_follow_price.png", plots.lead_lag_figure(result["lead_lag"])),
         ("11_gold_after_regime.png", plots.gold_after_regime_figure(labelled, profile, result["price_test"])),
         ("12_with_and_without_price.png", plots.feature_set_figure(result["feature_sets"])),
+        (
+            "13_big_moves.png",
+            plots.big_move_figure(
+                result["big_moves"]["volatility"],
+                result["big_moves"]["summary"],
+                result["big_moves"]["positioning"],
+                result["big_moves"]["threshold"],
+                result["big_moves"]["base_rate"],
+            ),
+        ),
     ]
 
 
@@ -213,6 +249,7 @@ FIGURE_CAPTIONS = {
     "10_speculators_follow_price.png": "Do speculators move before, with or after the price?",
     "11_gold_after_regime.png": "What gold did over the 8 weeks after each regime was published.",
     "12_with_and_without_price.png": "Re-running the clustering with gold price features added.",
+    "13_big_moves.png": "Can a big gold move be seen coming on report day?",
 }
 
 
@@ -282,6 +319,48 @@ we keep the positioning-only regimes and use the price as the yardstick instead.
 """
 
 
+def _big_move_section(result):
+    """Can a big move be seen coming? In plain language (empty if prices weren't available)."""
+    if "big_moves" not in result:
+        return ""
+    moves = result["big_moves"]
+    summary, volatility = moves["summary"], moves["volatility"]
+    table = pd.DataFrame(
+        {
+            "Clue on report day": summary["clue"],
+            "Chance of a big move: lowest fifth": summary["chance_lowest_fifth"].map("{:.0%}".format),
+            "Chance of a big move: highest fifth": summary["chance_highest_fifth"].map("{:.0%}".format),
+            "Reliable?": [
+                ("yes" if reliable else "no, could be luck") + (" (p < 0.001)" if p < 0.001 else f" (p = {p:.2f})")
+                for reliable, p in zip(summary["reliable"], summary["p_value"], strict=True)
+            ],
+        }
+    )
+    largest_direction = moves["direction"]["correlation_with_direction"].abs().max()
+    return f"""## Can we see a big price move coming?
+
+A **big move** here is gold rising or falling by **{moves["threshold"]:.1%} or more** in the
+{config.BIG_MOVE_WEEKS} weeks after a report is published: the largest 20% of moves, which normally happen
+about **1 week in 5** ({moves["base_rate"]:.0%}). We split each clue known on report day into fifths and compare
+how often a big move followed. Reliability is tested on weeks whose 4-week windows don't overlap.
+
+**Will there be a big move (up or down)? Partly, but the clue is the price, not the COT report.**
+
+{_table(table)}
+
+- After gold's **jumpiest** 13 weeks, a big move followed {volatility["big_move_chance"].iloc[-1]:.0%} of the time,
+  against {volatility["big_move_chance"].iloc[0]:.0%} after its **calmest**: roughly twice as likely. Big moves come
+  in bunches ("volatility clustering"), a well-known pattern in markets. Even so, most jumpy weeks were **not**
+  followed by a big move, so this raises the odds rather than giving a warning.
+- None of the COT clues (how much speculators just bought or sold, open interest changes, extreme positioning)
+  changed the odds by more than luck could explain.
+
+**Will it be a buy or a dump? No hint.** Of the {moves["big_count"]} big moves, {moves["share_up"]:.0%} were up,
+mostly because gold rose for most of 2000-2026. Speculators' positioning, their recent buying or selling and
+gold's recent trend did not point to the direction (all correlations within ±{largest_direction:.2f}).
+"""
+
+
 def render_report(result, figure_names):
     """Plain-language markdown summary for readers without a statistics background."""
     profile, scorecard, test = result["profile"], result["scorecard"], result["test"]
@@ -330,10 +409,22 @@ def render_report(result, figure_names):
         if has_price
         else ""
     )
+    big_move_bullet = (
+        "- **Big moves:** a big move (up or down) is about twice as likely after gold has been jumpy, but nothing "
+        "in the COT report warns of one or says which way it will go.\n"
+        if "big_moves" in result
+        else ""
+    )
     return f"""# Gold positioning regimes
 
 _Generated by `scripts/gold_regimes.py` from {len(labelled)} weekly COT reports
 ({labelled["date"].min():%Y-%m-%d} to {labelled["date"].max():%Y-%m-%d}), COMEX gold only._
+
+## In one sentence
+
+The COT report clearly shows what the big gold speculators are doing, and that they tend to pull back from
+extreme bets, but it can't tell you where gold's price is heading or when a big move is coming. The best early
+warning of a big move is simply that gold has recently been jumpy.
 
 ## In short
 
@@ -341,7 +432,7 @@ _Generated by `scripts/gold_regimes.py` from {len(labelled)} weekly COT reports
   without being told what to look for.
 - The regime **tells you what speculators tend to do next**: crowded longs tend to be trimmed and net-short
   positions tend to be bought back (p-value {_p_text(test)}).
-{price_bullet}- Latest report ({latest["date"]:%Y-%m-%d}): **{latest["regime_name"]}**.
+{price_bullet}{big_move_bullet}- Latest report ({latest["date"]:%Y-%m-%d}): **{latest["regime_name"]}**.
 
 These are descriptions of past positioning, not trading recommendations.
 
@@ -351,6 +442,7 @@ These are descriptions of past positioning, not trading recommendations.
 {_table(regime_table)}
 
 {_price_section(result)}
+{_big_move_section(result)}
 ## Why K-Means with {config.N_REGIMES} regimes
 
 Positions are measured as a share of open interest because the market is about {growth:.0f}x its 1986 size

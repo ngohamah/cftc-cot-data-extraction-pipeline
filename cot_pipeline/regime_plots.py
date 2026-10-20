@@ -581,3 +581,74 @@ def transition_figure(transitions, names=config.REGIME_NAMES):
             "Net-short rarely jumps straight to crowded-long: positioning shifts gradually.",
         )
     return fig
+
+
+def big_move_figure(volatility_table, summary, positioning_table, threshold, base_rate):
+    """Can a big gold move be seen coming? (1) jumpiness, (2) direction of big moves, (3) every clue."""
+    with plt.rc_context(STYLE):
+        fig = plt.figure(figsize=(15, 11))
+        grid = fig.add_gridspec(2, 2, height_ratios=[1, 0.9])
+        jumpy, direction = fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 1])
+        clues = fig.add_subplot(grid[1, :])
+
+        chances = volatility_table["big_move_chance"].to_numpy()
+        jumpy.bar(range(len(chances)), chances, width=0.65, color=config.SERIES_COLORS[0])
+        for x, chance in enumerate(chances):
+            jumpy.text(x, chance + 0.006, f"{chance:.0%}", ha="center", fontsize=10, color=config.PLOT_INK)
+        jumpy.axhline(base_rate, color=config.PLOT_INK_MUTED, linewidth=1)
+        jumpy.set_xticks(range(len(chances)), ["Calmest\nfifth", "2nd", "3rd", "4th", "Jumpiest\nfifth"])
+        jumpy.set_ylim(0, max(chances) * 1.25)
+        jumpy.yaxis.set_major_formatter(PERCENT)
+        jumpy.set_ylabel("Chance of a big move in the next 4 weeks")
+        jumpy.set_xlabel(f"How jumpy gold was over the last 13 weeks\n(grey line = normal chance, {base_rate:.0%})")
+        jumpy.set_title("1. After jumpy weeks, big moves are about twice as likely")
+
+        shares = positioning_table["share_up"].to_numpy()
+        direction.bar(range(len(shares)), shares, width=0.65, color=config.SERIES_COLORS[0])
+        for x, share in enumerate(shares):
+            direction.text(x, share + 0.01, f"{share:.0%}", ha="center", fontsize=10, color=config.PLOT_INK)
+        direction.axhline(0.5, color=config.PLOT_INK_MUTED, linewidth=1)
+        direction.set_xticks(range(len(shares)), ["Most\nshort", "2nd", "3rd", "4th", "Most\nlong"])
+        direction.set_ylim(0, 1)
+        direction.yaxis.set_major_formatter(PERCENT)
+        direction.set_ylabel("Share of big moves that were UP")
+        direction.set_xlabel(
+            "Speculators' positioning on report day, in fifths of its 3-year range\n(grey line = coin flip, 50%)"
+        )
+        direction.set_title("2. Up or down? Speculators' positioning gives no hint")
+
+        rows = summary.iloc[::-1].reset_index(drop=True)
+        for y, row in rows.iterrows():
+            color = config.SERIES_COLORS[0] if row["reliable"] else config.PLOT_INK_MUTED
+            clues.plot([row["chance_lowest_fifth"], row["chance_highest_fifth"]], [y, y], color=color, linewidth=2)
+            clues.scatter(
+                row["chance_lowest_fifth"],
+                y,
+                s=70,
+                facecolors=config.PLOT_SURFACE,
+                edgecolors=color,
+                linewidths=2,
+                zorder=3,
+            )
+            clues.scatter(row["chance_highest_fifth"], y, s=70, color=color, zorder=3)
+            p_label = "p < 0.001" if row["p_value"] < 0.001 else f"p = {row['p_value']:.2f}"
+            verdict = "reliable" if row["reliable"] else "could be luck"
+            clues.text(0.345, y, f"{verdict} ({p_label})", va="center", fontsize=9.5, color=config.PLOT_INK)
+        clues.axvline(base_rate, color=config.PLOT_INK_MUTED, linewidth=1)
+        clues.set_yticks(range(len(rows)), rows["clue"])
+        clues.set_xlim(0.1, 0.42)
+        clues.set_ylim(-0.6, len(rows) - 0.4)
+        clues.xaxis.set_major_formatter(PERCENT)
+        clues.set_xlabel(
+            "Chance of a big move in the next 4 weeks: open dot = clue in its lowest fifth, filled dot = highest "
+            f"fifth (grey line = normal, {base_rate:.0%})"
+        )
+        clues.set_title("3. Which clues on report day raise the odds of a big move?")
+        clues.grid(axis="y", visible=False)
+        _finish(
+            fig,
+            "Can we see a big gold move coming? Its size a little, its direction no",
+            f"A big move = gold up or down by {threshold:.1%} or more in the 4 weeks after a report is published "
+            "(the largest 20% of moves; normally 1 week in 5). Only gold's own recent jumpiness is a reliable clue.",
+        )
+    return fig
