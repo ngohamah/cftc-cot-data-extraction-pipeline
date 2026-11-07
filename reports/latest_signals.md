@@ -1,6 +1,6 @@
 # Commitments of Traders - weekly summary
 
-_Generated 2026-10-31 11:52_
+_Generated 2026-11-07 12:39_
 
 **What this shows:** each week the CFTC reports how many futures contracts large speculators (hedge funds, money managers) hold betting on prices rising (long) or falling (short). The *net position* is longs minus shorts. The *reading* combines the weekly change in that net position with the change in open interest (total contracts outstanding):
 
@@ -14,23 +14,23 @@ This is an indicator, not a trading recommendation.
 
 | Market | Week of | Large speculators net position (contracts) | Change vs previous week | Reading | New weeks added this run |
 |---|---|---|---|---|---|
-| MEXICAN PESO | 2026-10-27 | 20,843 | +3,820 | Bullish | 1 |
-| JAPANESE YEN | 2026-10-27 | 101,591 | +31,713 | Bullish Reversal | 1 |
-| EURO FX | 2026-10-27 | -143,894 | -9,370 | Bearish Reversal | 1 |
-| DJIA Consolidated | 2026-10-27 | 9,599 | +1,743 | Bullish | 1 |
-| NASDAQ-100 | 2026-10-27 | 46,552 | -333 | Bearish Reversal | 1 |
-| NEW ZEALAND | 2026-10-27 | -57,690 | +459 | Bullish Reversal | 1 |
-| AUSTRALIAN | 2026-10-27 | -128,315 | -1,023 | Bearish Reversal | 1 |
-| CANADIAN DOLLAR | 2026-10-27 | -66,424 | +8,285 | Bullish Reversal | 1 |
-| SWISS FRANC | 2026-10-27 | -20,049 | -1,899 | Bearish Reversal | 1 |
-| POUND | 2026-10-27 | -79,414 | +1,006 | Bullish Reversal | 1 |
-| U.S. DOLLAR INDEX | 2026-10-27 | 14,121 | -923 | Bearish Reversal | 1 |
-| SILVER | 2026-10-27 | 19,703 | -92 | Bearish | 1 |
-| COPPER | 2026-10-27 | 48,317 | -9,080 | Bearish | 1 |
-| GOLD | 2026-10-27 | 186,451 | -13,414 | Bearish Reversal | 1 |
-| PLATINUM | 2026-10-27 | 9,294 | -3,868 | Bearish | 1 |
-| BITCOIN | 2026-10-27 | 2,720 | +302 | Bullish Reversal | 1 |
-| CRUDE OIL | 2026-10-27 | -27,195 | -3,200 | Bearish | 1 |
+| MEXICAN PESO | 2026-11-03 | 18,017 | -2,826 | Bearish | 1 |
+| JAPANESE YEN | 2026-11-03 | 102,321 | +730 | Bullish | 1 |
+| EURO FX | 2026-11-03 | -157,791 | -13,897 | Bearish | 1 |
+| DJIA Consolidated | 2026-11-03 | 12,514 | +2,915 | Bullish Reversal | 1 |
+| NASDAQ-100 | 2026-11-03 | 45,216 | -1,336 | Bearish | 1 |
+| NEW ZEALAND | 2026-11-03 | -60,015 | -2,325 | Bearish | 1 |
+| AUSTRALIAN | 2026-11-03 | -129,457 | -1,142 | Bearish | 1 |
+| CANADIAN DOLLAR | 2026-11-03 | -41,775 | +24,649 | Bullish Reversal | 1 |
+| SWISS FRANC | 2026-11-03 | -16,589 | +3,460 | Bullish Reversal | 1 |
+| POUND | 2026-11-03 | -59,821 | +19,593 | Bullish Reversal | 1 |
+| U.S. DOLLAR INDEX | 2026-11-03 | 14,190 | +69 | Bullish | 1 |
+| SILVER | 2026-11-03 | 21,251 | +1,548 | Bullish Reversal | 1 |
+| COPPER | 2026-11-03 | 37,710 | -10,607 | Bearish Reversal | 1 |
+| GOLD | 2026-11-03 | 179,548 | -6,903 | Bearish | 1 |
+| PLATINUM | 2026-11-03 | 6,665 | -2,629 | Bearish | 1 |
+| BITCOIN | 2026-11-03 | 2,230 | -490 | Bearish Reversal | 1 |
+| CRUDE OIL | 2026-11-03 | -25,151 | +2,044 | Bullish Reversal | 1 |
 
 ## Issues during this run
 
