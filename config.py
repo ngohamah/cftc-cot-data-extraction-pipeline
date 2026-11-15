@@ -151,3 +151,37 @@ SIGNAL_BULLISH = (1, "Bullish")
 SIGNAL_BEARISH = (2, "Bearish")
 SIGNAL_BEARISH_REVERSAL = (3, "Bearish Reversal")
 SIGNAL_BULLISH_REVERSAL = (4, "Bullish Reversal")
+
+# --- price bars (daily Yahoo Finance bars kept in Supabase; see supabase/ and the README) -----
+PRICE_LOG_FILE = PROJECT_ROOT / "logs" / "price_backfill.log"  # local runs; not in git
+# environment variables read by scripts/backfill_price_bars.py (GitHub secrets in price-backfill.yml)
+PRICE_INGEST_URL_ENV = "INGEST_PRICE_BARS_URL"
+PRICE_INGEST_SECRET_ENV = "INGEST_PRICE_BARS_SECRET"
+PRICE_INGEST_LIST_TIMEOUT_SECONDS = 60
+PRICE_INGEST_TIMEOUT_SECONDS = 300  # one asset's full history (range=max) is a few thousand bars
+# ranges Yahoo's chart endpoint accepts; the nightly job uses 1mo, a full backfill uses max
+PRICE_RANGES = ("1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max")
+PRICE_DEFAULT_RANGE = "max"
+# asset registry: (frontend asset name = database key, file in signal/, Yahoo symbol, invert, is a forex pair)
+# must match the seed in supabase/migrations/20261115000000_price_pipeline_schema.sql and
+# src/lib/assets.ts in the frontend (tests/test_backfill_price_bars.py checks the seed). Yahoo only lists
+# USDCHF and USDJPY, so CHFUSD and JPYUSD are stored as Yahoo quotes them and inverted by the frontend's
+# API when read, so "price up = that currency strengthening" holds for every pair (matching CME futures).
+PRICE_ASSETS = [
+    ("AUDUSD", "AUSTRALIAN", "AUDUSD=X", False, True),
+    ("CADUSD", "CANADIAN DOLLAR", "CADUSD=X", False, True),
+    ("CHFUSD", "SWISS FRANC", "USDCHF=X", True, True),
+    ("EURUSD", "EURO FX", "EURUSD=X", False, True),
+    ("GBPUSD", "POUND", "GBPUSD=X", False, True),
+    ("JPYUSD", "JAPANESE YEN", "USDJPY=X", True, True),
+    ("NZDUSD", "NEW ZEALAND", "NZDUSD=X", False, True),
+    ("CRUDE OIL", "CRUDE OIL", "CL=F", False, False),
+    ("COPPER", "COPPER", "HG=F", False, False),
+    ("GOLD", "GOLD", "GC=F", False, False),
+    ("PLATINUM", "PLATINUM", "PL=F", False, False),
+    ("SILVER", "SILVER", "SI=F", False, False),
+    ("DOW", "DJIA Consolidated", "^DJI", False, False),
+    ("NASDAQ", "NASDAQ-100", "^NDX", False, False),
+    ("BITCOIN", "BITCOIN", "BTC-USD", False, False),
+    ("USD INDEX", "U.S. DOLLAR INDEX", "DX-Y.NYB", False, False),
+]
