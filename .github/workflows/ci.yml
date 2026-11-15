@@ -21,3 +21,14 @@ jobs:
           ruff format --check .
       - name: Unit tests
         run: pytest -v
+
+  # The Supabase Edge Function is TypeScript (Deno); type-check it so it isn't the one file nothing checks.
+  deno-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Function
+        run: deno check supabase/functions/ingest-price-bars/index.ts
