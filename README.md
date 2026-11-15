@@ -135,6 +135,8 @@ them from there; if Yahoo is down the charts are at worst one day stale. Everyth
 - `.github/workflows/supabase-deploy.yml` - applies new migrations and redeploys the function whenever
   `supabase/` changes on `master`.
 
+How migrations work, why they are done this way and how to add one: [`docs/MIGRATIONS.md`](docs/MIGRATIONS.md).
+
 Prices are stored exactly as Yahoo returns them. Yahoo only lists the Swiss franc and yen pairs as `USDCHF` and
 `USDJPY`, so the frontend's API inverts those two when it reads them (shown as `CHFUSD` and `JPYUSD`), so that
 "price up" means that currency strengthening for every pair. The asset list in `config.py` (`PRICE_ASSETS`) must
