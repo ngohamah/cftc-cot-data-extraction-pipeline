@@ -38,8 +38,10 @@ jobs:
       - name: Apply migrations
         run: supabase db push --remote --yes
 
+      # --yes answers the CLI's production confirmation prompts, which a CI run cannot answer;
+      # --remote=<ref> replaces the deprecated --project-ref.
       - name: Deploy Edge Function
-        run: supabase functions deploy ingest-price-bars --project-ref "$PROJECT_REF" --no-verify-jwt
+        run: supabase functions deploy ingest-price-bars --remote="$PROJECT_REF" --no-verify-jwt --yes
 
       - name: Set function secrets
-        run: supabase secrets set CRON_SECRET="${{ secrets.INGEST_PRICE_BARS_SECRET }}" --project-ref "$PROJECT_REF"
+        run: supabase secrets set CRON_SECRET="${{ secrets.INGEST_PRICE_BARS_SECRET }}" --remote="$PROJECT_REF" --yes
