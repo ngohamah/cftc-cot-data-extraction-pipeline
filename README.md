@@ -70,6 +70,9 @@ pytest
 # verify raw/FUT86_16.txt matches the CFTC's own 1986-2016 yearly files (downloads each year once)
 python scripts/verify_history_parity.py
 
+# load the full price history into Supabase (needs INGEST_PRICE_BARS_URL and INGEST_PRICE_BARS_SECRET)
+python scripts/backfill_price_bars.py
+
 # optional: explore the data in the notebook (ensure you have jupyter installed)
 jupyter lab
 ```
@@ -113,6 +116,29 @@ Applications can read the latest signals straight from the repository, e.g.
 `%20`, e.g. `signal/EURO%20FX.csv`). Columns are in the order: date, longs, shorts, change in longs, change in
 shorts, open interest, net positions, reading.
 
+## Daily price bars (Supabase)
+
+The charts in the frontend need daily prices next to the weekly COT data. Instead of asking Yahoo Finance on
+every page view, the prices are stored once a day in a Supabase (Postgres) database and the frontend reads
+them from there; if Yahoo is down the charts are at worst one day stale. Everything for this lives under
+`supabase/`:
+
+- `supabase/migrations/` - the tables (`price_assets`: which asset maps to which Yahoo symbol and signal file;
+  `price_bars`: one row per asset and day; `price_ingest_runs`: what each nightly run did), a read function that
+  also builds weekly bars, and the nightly schedule (01:15 UTC, `pg_cron`).
+- `supabase/functions/ingest-price-bars/` - the small program (a Supabase Edge Function) that downloads the bars
+  from Yahoo and writes them; re-running it is always safe, it only overwrites the same days with the same values.
+- `scripts/backfill_price_bars.py` - loads the full history once (or reloads one asset) by calling that
+  function one asset at a time; logs to `logs/price_backfill.log`. Also available as the manual
+  **Backfill price bars** workflow in the Actions tab.
+- `.github/workflows/supabase-deploy.yml` - applies new migrations and redeploys the function whenever
+  `supabase/` changes on `master`.
+
+Prices are stored exactly as Yahoo returns them. Yahoo only lists the Swiss franc and yen pairs as `USDCHF` and
+`USDJPY`, so the frontend's API inverts those two when it reads them (shown as `CHFUSD` and `JPYUSD`), so that
+"price up" means that currency strengthening for every pair. The asset list in `config.py` (`PRICE_ASSETS`) must
+match the database seed and the frontend's `assets.ts`; a unit test checks the first two.
+
 ## Where to find data
 
 | Folder | What is in it |
@@ -121,7 +147,7 @@ shorts, open interest, net positions, reading.
 | `signal/` | One CSV per market: the same weeks with the signal reading (Bullish, Bearish, ...) |
 | `reports/` | `latest_signals.md` - latest week per market in plain language; `history_parity.md` - result of the history check |
 | `raw/` | Source data: `FUT86_16.txt` (1986-2016) and `legacy_fut_<year>.zip` (2017 on); not stored in git |
-| `logs/` | `pipeline.log` - what your local runs did (not stored in git); `ci/pipeline.log` - what the weekly bot did, committed by the bot, each run starting with a link to its GitHub Actions run |
+| `logs/` | `pipeline.log` - what your local runs did, `price_backfill.log` - what a local price backfill did (neither stored in git); `ci/pipeline.log` - what the weekly bot did, committed by the bot, each run starting with a link to its GitHub Actions run |
 
 ## Code layout
 
@@ -139,6 +165,7 @@ stage:
 | `cot_pipeline/orchestrate.py` | Runs the stages in order for every market |
 | `cot_pipeline/logging_setup.py` | Logging to `logs/pipeline.log` and the console |
 | `cot_pipeline/parity.py` | Compares the history file with per-year CFTC files (used by `scripts/verify_history_parity.py`) |
+| `scripts/backfill_price_bars.py` | Loads price history into Supabase through the `ingest-price-bars` Edge Function (`supabase/`) |
 
 The original notebook is in `docs/`.
 
