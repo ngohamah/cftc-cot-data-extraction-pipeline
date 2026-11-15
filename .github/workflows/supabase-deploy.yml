@@ -33,9 +33,10 @@ jobs:
         run: supabase link --project-ref "$PROJECT_REF"
 
       # Recent CLI versions push to a local Docker database unless told otherwise; --remote targets
-      # the project linked in the previous step.
+      # the project linked in the previous step. --yes answers the "apply N migrations?" prompt,
+      # which a CI run cannot answer (the CLI would stop without changing anything).
       - name: Apply migrations
-        run: supabase db push --remote
+        run: supabase db push --remote --yes
 
       - name: Deploy Edge Function
         run: supabase functions deploy ingest-price-bars --project-ref "$PROJECT_REF" --no-verify-jwt
