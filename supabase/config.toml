@@ -1,0 +1,6 @@
+# Supabase CLI project configuration for the price pipeline.
+# Only the Edge Function setting is needed: the function is called by pg_cron and by
+# scripts/backfill_price_bars.py with a shared secret (x-cron-secret), not with a user JWT.
+
+[functions.ingest-price-bars]
+verify_jwt = false
