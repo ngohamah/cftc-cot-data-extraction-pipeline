@@ -1,13 +1,13 @@
 name: Deploy Supabase (price pipeline)
 
-# Applies new migrations and redeploys the Edge Function whenever supabase/ changes on the
-# default branch. Nothing here touches data/, signal/ or the weekly COT workflow.
+# Applies new migrations and redeploys the Edge Function whenever supabase/ (or this workflow)
+# changes on the default branch. Nothing here touches data/, signal/ or the weekly COT workflow.
 # Needs: variable SUPABASE_PROJECT_REF; secrets SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD,
 # INGEST_PRICE_BARS_SECRET (repository Settings -> Secrets and variables -> Actions).
 on:
   push:
     branches: [master]
-    paths: ["supabase/**"]
+    paths: ["supabase/**", ".github/workflows/supabase-deploy.yml"]
   workflow_dispatch:
 
 concurrency:
@@ -32,8 +32,10 @@ jobs:
       - name: Link project
         run: supabase link --project-ref "$PROJECT_REF"
 
+      # Recent CLI versions push to a local Docker database unless told otherwise; --remote targets
+      # the project linked in the previous step.
       - name: Apply migrations
-        run: supabase db push
+        run: supabase db push --remote
 
       - name: Deploy Edge Function
         run: supabase functions deploy ingest-price-bars --project-ref "$PROJECT_REF" --no-verify-jwt
