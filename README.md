@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ngohamah/cot_analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/ngohamah/cot_analysis/actions/workflows/ci.yml)
 [![Weekly COT update](https://github.com/ngohamah/cot_analysis/actions/workflows/weekly-update.yml/badge.svg)](https://github.com/ngohamah/cot_analysis/actions/workflows/weekly-update.yml)
+[![Backfill price bars](https://github.com/ngohamah/cftc-cot-data-extraction-pipeline/actions/workflows/price-backfill.yml/badge.svg)](https://github.com/ngohamah/cftc-cot-data-extraction-pipeline/actions/workflows/price-backfill.yml)
 
 The Commitments of Traders (COT) reports are published weekly by the Commodity Futures Trading Commission (CFTC) based on position data supplied by reporting firms (Futures Commission Merchants(FCMs), clearing members, foreign brokers and exchanges) on their investment behaviours in the futures and options markets across different exchanges in the US. Understanding this behaviour over time presents a good opportunity to identify trends and investment opportunities in different markets.
 
