@@ -1,0 +1,42 @@
+name: Deploy Supabase (price pipeline)
+
+# Applies new migrations and redeploys the Edge Function whenever supabase/ changes on the
+# default branch. Nothing here touches data/, signal/ or the weekly COT workflow.
+# Needs: variable SUPABASE_PROJECT_REF; secrets SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD,
+# INGEST_PRICE_BARS_SECRET (repository Settings -> Secrets and variables -> Actions).
+on:
+  push:
+    branches: [master]
+    paths: ["supabase/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Apply migrations
+        run: supabase db push
+
+      - name: Deploy Edge Function
+        run: supabase functions deploy ingest-price-bars --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Set function secrets
+        run: supabase secrets set CRON_SECRET="${{ secrets.INGEST_PRICE_BARS_SECRET }}" --project-ref "$PROJECT_REF"

@@ -1,0 +1,54 @@
+name: Backfill price bars
+
+# Manual "load price history" button: asks the ingest-price-bars Edge Function to (re)load
+# Yahoo Finance bars for every enabled asset, or the assets given, one request per asset.
+# Needs: variable SUPABASE_PROJECT_REF; secret INGEST_PRICE_BARS_SECRET.
+on:
+  workflow_dispatch:
+    inputs:
+      assets:
+        description: "Space-separated asset names (blank = all enabled)"
+        required: false
+        default: ""
+      range:
+        description: "Yahoo range: max, 10y, 5y, 2y, 1y, 6mo, 3mo, 1mo"
+        required: false
+        default: "max"
+
+concurrency:
+  group: price-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # The step fails (and GitHub emails you) if any asset could not be ingested.
+      - name: Run backfill
+        env:
+          INGEST_PRICE_BARS_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/ingest-price-bars
+          INGEST_PRICE_BARS_SECRET: ${{ secrets.INGEST_PRICE_BARS_SECRET }}
+        run: |
+          # shellcheck disable=SC2086  (assets is intentionally word-split)
+          python scripts/backfill_price_bars.py --range "${{ inputs.range }}" \
+            ${{ inputs.assets != '' && format('--assets {0}', inputs.assets) || '' }} \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backfill log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-backfill-log-${{ github.run_id }}
+          path: logs/price_backfill.log
+          retention-days: 90

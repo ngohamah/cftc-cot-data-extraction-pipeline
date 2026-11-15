@@ -21,3 +21,4 @@ logs/*
 
 # ignore pipeline.md.
 docs/PIPELINE.md
+docs/MARKET_DATA_PIPELINE.md
