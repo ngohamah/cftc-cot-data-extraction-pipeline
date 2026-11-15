@@ -56,8 +56,17 @@ export function barDate(unixSeconds: number, timeZone: string): string {
   }).format(new Date(unixSeconds * 1000));
 }
 
+// Yahoo quietly switches to one bar per MONTH when asked for range=max, even with interval=1d
+// (checked 2026-11-15: GC=F gave 269 monthly bars instead of ~6,600 daily ones). An explicit
+// period from 1970 to now keeps daily bars for the whole history. Every other range stays daily.
+export function yahooQuery(range: string, nowSeconds: number): string {
+  const span = range === "max" ? `period1=0&period2=${nowSeconds}` : `range=${encodeURIComponent(range)}`;
+  return `${span}&interval=1d`;
+}
+
 async function fetchYahoo(symbol: string, range: string): Promise<YahooResult> {
-  const url = `${YAHOO_CHART}/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=1d`;
+  const query = yahooQuery(range, Math.floor(Date.now() / 1000));
+  const url = `${YAHOO_CHART}/${encodeURIComponent(symbol)}?${query}`;
   const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
   if (!res.ok) throw new Error(`Yahoo responded ${res.status} for ${symbol}`);
   const json = await res.json();
