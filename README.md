@@ -130,8 +130,9 @@ them from there; if Yahoo is down the charts are at worst one day stale. Everyth
 - `supabase/functions/ingest-price-bars/` - the small program (a Supabase Edge Function) that downloads the bars
   from Yahoo and writes them; re-running it is always safe, it only overwrites the same days with the same values.
 - `scripts/backfill_price_bars.py` - loads the full history once (or reloads one asset) by calling that
-  function one asset at a time; logs to `logs/price_backfill.log`. Also available as the manual
-  **Backfill price bars** workflow in the Actions tab.
+  function one asset at a time; logs to `logs/price_backfill.log`. Also runs as the **Backfill price bars**
+  workflow in the Actions tab: automatically every day at 01:45 UTC (last month of bars for every asset, a
+  backup for the `pg_cron` schedule that emails you if it fails), or by hand with any range.
 - `.github/workflows/supabase-deploy.yml` - applies new migrations and redeploys the function whenever
   `supabase/` changes on `master`.
 
