@@ -143,6 +143,24 @@ Prices are stored exactly as Yahoo returns them. Yahoo only lists the Swiss fran
 "price up" means that currency strengthening for every pair. The asset list in `config.py` (`PRICE_ASSETS`) must
 match the database seed and the frontend's `assets.ts`; a unit test checks the first two.
 
+## Architecture
+
+**How this repo's workflows, scripts and Supabase talk to each other.** Weekly COT data is committed to this
+repo. Daily prices go from Yahoo straight into Supabase. Deploys install code but move no data.
+
+![Pipeline architecture](docs/architecture/images/pipeline.png)
+
+**How the website (`cot-report-ctl` repo) reads this data.** Browsers download `signal/*.csv` directly from
+GitHub. Price charts go through the website's API server, which reads Supabase and falls back to Yahoo.
+
+![Frontend data flow](docs/architecture/images/frontend.png)
+
+The step-by-step explanations, the list of what the website relies on from this repo, and what visitors see
+when something fails are in [`docs/architecture/pipeline.html`](docs/architecture/pipeline.html) and
+[`docs/architecture/frontend.html`](docs/architecture/frontend.html). Download them and open them in a browser:
+GitHub shows `.html` files as code. If you change a diagram, re-export its PNG in `docs/architecture/images/`
+as well.
+
 ## Where to find data
 
 | Folder | What is in it |
