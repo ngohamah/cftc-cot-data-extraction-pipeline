@@ -1,9 +1,19 @@
 name: Backfill price bars
 
-# Manual "load price history" button: asks the ingest-price-bars Edge Function to (re)load
-# Yahoo Finance bars for every enabled asset, or the assets given, one request per asset.
+# Asks the ingest-price-bars Edge Function to (re)load Yahoo Finance bars for every enabled asset,
+# or the assets given, one request per asset.
+# - Daily (scheduled): re-fetches the last month for every asset. This is a second line of defence
+#   next to the Supabase pg_cron job (01:15 UTC): if that job silently does nothing, this one still
+#   loads the day's bars, and a failure here emails you. Running both is safe - the function only
+#   overwrites the same days with the same values.
+# - Manual ("Run workflow" button): load any range, e.g. the full history for a new asset.
+# Scheduled runs use the default branch and get no inputs: they load all assets with range 1mo.
 # Needs: variable SUPABASE_PROJECT_REF; secret INGEST_PRICE_BARS_SECRET.
 on:
+  schedule:
+    # 01:45 UTC every day: after US futures settle (~21:00 UTC), the forex roll (22:00 UTC) and
+    # BTC's UTC day close, and 30 minutes after the pg_cron run so the two don't overlap.
+    - cron: "45 1 * * *"
   workflow_dispatch:
     inputs:
       assets:
@@ -41,8 +51,8 @@ jobs:
           INGEST_PRICE_BARS_SECRET: ${{ secrets.INGEST_PRICE_BARS_SECRET }}
         run: |
           # shellcheck disable=SC2086  (assets is intentionally word-split)
-          python scripts/backfill_price_bars.py --range "${{ inputs.range }}" \
-            ${{ inputs.assets != '' && format('--assets {0}', inputs.assets) || '' }} \
+          python scripts/backfill_price_bars.py --range "${{ inputs.range || '1mo' }}" \
+            ${{ inputs.assets && format('--assets {0}', inputs.assets) || '' }} \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload backfill log
