@@ -22,3 +22,5 @@ logs/*
 # ignore pipeline.md.
 docs/PIPELINE.md
 docs/MARKET_DATA_PIPELINE.md
+# architecture diagrams are kept locally only (not published in this public repo)
+docs/architecture/
